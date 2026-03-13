@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: FRACAS & RAMS System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: failures
+    description: Failure report (job card) operations
+  - name: trains
+    description: Train fleet operations
+  - name: reports
+    description: RAMS report and calculation operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,356 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /trains:
+    get:
+      operationId: listTrains
+      tags: [trains]
+      summary: List all trains in fleet
+      responses:
+        "200":
+          description: List of trains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Train"
+    post:
+      operationId: createTrain
+      tags: [trains]
+      summary: Add a train to fleet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTrain"
+      responses:
+        "201":
+          description: Train created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Train"
+
+  /failures:
+    get:
+      operationId: listFailures
+      tags: [failures]
+      summary: List all failure reports
+      parameters:
+        - in: query
+          name: trainId
+          schema:
+            type: string
+        - in: query
+          name: system
+          schema:
+            type: string
+        - in: query
+          name: failureClass
+          schema:
+            type: string
+        - in: query
+          name: startDate
+          schema:
+            type: string
+        - in: query
+          name: endDate
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of failure reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FailureReport"
+    post:
+      operationId: createFailure
+      tags: [failures]
+      summary: Create a failure report (job card)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFailureReport"
+      responses:
+        "201":
+          description: Failure report created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureReport"
+
+  /failures/{id}:
+    get:
+      operationId: getFailure
+      tags: [failures]
+      summary: Get failure report by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Failure report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureReport"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateFailure
+      tags: [failures]
+      summary: Update failure report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFailureReport"
+      responses:
+        "200":
+          description: Updated failure report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureReport"
+    delete:
+      operationId: deleteFailure
+      tags: [failures]
+      summary: Delete failure report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /failures/import:
+    post:
+      operationId: importFailures
+      tags: [failures]
+      summary: Import failure reports from JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                records:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/CreateFailureReport"
+              required: [records]
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /failures/export:
+    get:
+      operationId: exportFailures
+      tags: [failures]
+      summary: Export all failure reports as JSON
+      responses:
+        "200":
+          description: Export data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FailureReport"
+                  exportedAt:
+                    type: string
+                  totalRecords:
+                    type: number
+                required: [records, exportedAt, totalRecords]
+
+  /reports/mdbf:
+    get:
+      operationId: getMDBFReport
+      tags: [reports]
+      summary: Get MDBF (Mean Distance Between Failures) report
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+        - in: query
+          name: endDate
+          schema:
+            type: string
+      responses:
+        "200":
+          description: MDBF report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MDBFReport"
+
+  /reports/mdbcf:
+    get:
+      operationId: getMDBCFReport
+      tags: [reports]
+      summary: Get MDBCF (Mean Distance Between Component Failures) report
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+        - in: query
+          name: endDate
+          schema:
+            type: string
+      responses:
+        "200":
+          description: MDBCF report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MDBCFReport"
+
+  /reports/mttr:
+    get:
+      operationId: getMTTRReport
+      tags: [reports]
+      summary: Get MTTR (Mean Time To Repair) report
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+        - in: query
+          name: endDate
+          schema:
+            type: string
+      responses:
+        "200":
+          description: MTTR report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MTTRReport"
+
+  /reports/availability:
+    get:
+      operationId: getAvailabilityReport
+      tags: [reports]
+      summary: Get fleet availability report
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+        - in: query
+          name: endDate
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Availability report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityReport"
+
+  /reports/pattern-failures:
+    get:
+      operationId: getPatternFailures
+      tags: [reports]
+      summary: Get pattern failure analysis
+      parameters:
+        - in: query
+          name: windowMonths
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Pattern failure report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatternFailureReport"
+
+  /reports/summary:
+    get:
+      operationId: getSummaryReport
+      tags: [reports]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Summary report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummaryReport"
+
+  /fleet-distances:
+    get:
+      operationId: listFleetDistances
+      tags: [trains]
+      summary: List fleet distance records
+      responses:
+        "200":
+          description: Fleet distances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FleetDistance"
+    post:
+      operationId: createFleetDistance
+      tags: [trains]
+      summary: Add fleet distance record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFleetDistance"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FleetDistance"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +385,578 @@ components:
       properties:
         status:
           type: string
+      required: [status]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success]
+
+    ImportResult:
+      type: object
+      properties:
+        imported:
+          type: number
+        failed:
+          type: number
+        errors:
+          type: array
+          items:
+            type: string
+      required: [imported, failed, errors]
+
+    Train:
+      type: object
+      properties:
+        id:
+          type: string
+        trainNumber:
+          type: string
+        formation:
+          type: string
+        inServiceDate:
+          type: string
+        status:
+          type: string
+          enum: [active, withdrawn, maintenance]
+        notes:
+          type: string
+        createdAt:
+          type: string
+      required: [id, trainNumber, formation, inServiceDate, status, createdAt]
+
+    CreateTrain:
+      type: object
+      properties:
+        trainNumber:
+          type: string
+        formation:
+          type: string
+        inServiceDate:
+          type: string
+        status:
+          type: string
+          enum: [active, withdrawn, maintenance]
+        notes:
+          type: string
+      required: [trainNumber, formation, inServiceDate, status]
+
+    FailureReport:
+      type: object
+      properties:
+        id:
+          type: string
+        jobCardNumber:
+          type: string
+        trainId:
+          type: string
+        trainNumber:
+          type: string
+        reportDate:
+          type: string
+        failureDate:
+          type: string
+        failureTime:
+          type: string
+        location:
+          type: string
+        systemCode:
+          type: string
+        systemName:
+          type: string
+        subsystemCode:
+          type: string
+        subsystemName:
+          type: string
+        scenarioCode:
+          type: string
+        failureDescription:
+          type: string
+        failureClass:
+          type: string
+          enum: [relevant, non-relevant, service-failure]
+        withdrawalRequired:
+          type: boolean
+        withdrawalReason:
+          type: string
+        actionTaken:
+          type: string
+        repairStartTime:
+          type: string
+        repairEndTime:
+          type: string
+        repairDurationMinutes:
+          type: number
+        trainDistanceAtFailure:
+          type: number
+        rootCause:
+          type: string
+        correctiveAction:
+          type: string
+        partReplaced:
+          type: string
+        partNumber:
+          type: string
+        technicianId:
+          type: string
+        status:
+          type: string
+          enum: [open, in-progress, closed]
+        delayMinutes:
+          type: number
+        notes:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
       required:
+        - id
+        - jobCardNumber
+        - trainId
+        - trainNumber
+        - reportDate
+        - failureDate
+        - systemCode
+        - systemName
+        - failureDescription
+        - failureClass
+        - withdrawalRequired
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateFailureReport:
+      type: object
+      properties:
+        jobCardNumber:
+          type: string
+        trainId:
+          type: string
+        trainNumber:
+          type: string
+        reportDate:
+          type: string
+        failureDate:
+          type: string
+        failureTime:
+          type: string
+        location:
+          type: string
+        systemCode:
+          type: string
+        systemName:
+          type: string
+        subsystemCode:
+          type: string
+        subsystemName:
+          type: string
+        scenarioCode:
+          type: string
+        failureDescription:
+          type: string
+        failureClass:
+          type: string
+          enum: [relevant, non-relevant, service-failure]
+        withdrawalRequired:
+          type: boolean
+        withdrawalReason:
+          type: string
+        actionTaken:
+          type: string
+        repairStartTime:
+          type: string
+        repairEndTime:
+          type: string
+        repairDurationMinutes:
+          type: number
+        trainDistanceAtFailure:
+          type: number
+        rootCause:
+          type: string
+        correctiveAction:
+          type: string
+        partReplaced:
+          type: string
+        partNumber:
+          type: string
+        technicianId:
+          type: string
+        status:
+          type: string
+          enum: [open, in-progress, closed]
+        delayMinutes:
+          type: number
+        notes:
+          type: string
+      required:
+        - trainId
+        - trainNumber
+        - reportDate
+        - failureDate
+        - systemCode
+        - systemName
+        - failureDescription
+        - failureClass
+        - withdrawalRequired
         - status
 
+    UpdateFailureReport:
+      type: object
+      properties:
+        failureDate:
+          type: string
+        failureTime:
+          type: string
+        location:
+          type: string
+        systemCode:
+          type: string
+        systemName:
+          type: string
+        subsystemCode:
+          type: string
+        subsystemName:
+          type: string
+        scenarioCode:
+          type: string
+        failureDescription:
+          type: string
+        failureClass:
+          type: string
+          enum: [relevant, non-relevant, service-failure]
+        withdrawalRequired:
+          type: boolean
+        withdrawalReason:
+          type: string
+        actionTaken:
+          type: string
+        repairStartTime:
+          type: string
+        repairEndTime:
+          type: string
+        repairDurationMinutes:
+          type: number
+        trainDistanceAtFailure:
+          type: number
+        rootCause:
+          type: string
+        correctiveAction:
+          type: string
+        partReplaced:
+          type: string
+        partNumber:
+          type: string
+        technicianId:
+          type: string
+        status:
+          type: string
+          enum: [open, in-progress, closed]
+        delayMinutes:
+          type: number
+        notes:
+          type: string
+
+    MDBFReport:
+      type: object
+      properties:
+        totalFleetDistance:
+          type: number
+        totalServiceFailures:
+          type: number
+        mdbf:
+          type: number
+        target:
+          type: number
+        compliance:
+          type: boolean
+        byTrain:
+          type: array
+          items:
+            type: object
+            properties:
+              trainNumber:
+                type: string
+              distance:
+                type: number
+              serviceFailures:
+                type: number
+              mdbf:
+                type: number
+            required: [trainNumber, distance, serviceFailures, mdbf]
+        trend:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+              mdbf:
+                type: number
+              failures:
+                type: number
+            required: [period, mdbf, failures]
+      required: [totalFleetDistance, totalServiceFailures, mdbf, target, compliance, byTrain, trend]
+
+    MDBCFReport:
+      type: object
+      properties:
+        bySystem:
+          type: array
+          items:
+            type: object
+            properties:
+              systemCode:
+                type: string
+              systemName:
+                type: string
+              population:
+                type: number
+              totalDistance:
+                type: number
+              componentFailures:
+                type: number
+              mdbcf:
+                type: number
+            required: [systemCode, systemName, population, totalDistance, componentFailures, mdbcf]
+      required: [bySystem]
+
+    MTTRReport:
+      type: object
+      properties:
+        overallMTTR:
+          type: number
+        target:
+          type: number
+        compliance:
+          type: boolean
+        bySystem:
+          type: array
+          items:
+            type: object
+            properties:
+              systemCode:
+                type: string
+              systemName:
+                type: string
+              totalRepairs:
+                type: number
+              totalRepairTime:
+                type: number
+              mttr:
+                type: number
+            required: [systemCode, systemName, totalRepairs, totalRepairTime, mttr]
+        distribution:
+          type: array
+          items:
+            type: object
+            properties:
+              range:
+                type: string
+              count:
+                type: number
+            required: [range, count]
+      required: [overallMTTR, target, compliance, bySystem, distribution]
+
+    AvailabilityReport:
+      type: object
+      properties:
+        overallAvailability:
+          type: number
+        target:
+          type: number
+        compliance:
+          type: boolean
+        scheduledHours:
+          type: number
+        unavailableHours:
+          type: number
+        byTrain:
+          type: array
+          items:
+            type: object
+            properties:
+              trainNumber:
+                type: string
+              availability:
+                type: number
+              downtime:
+                type: number
+            required: [trainNumber, availability, downtime]
+        trend:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+              availability:
+                type: number
+            required: [period, availability]
+      required: [overallAvailability, target, compliance, scheduledHours, unavailableHours, byTrain, trend]
+
+    PatternFailureReport:
+      type: object
+      properties:
+        windowMonths:
+          type: number
+        analysisDate:
+          type: string
+        patterns:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatternFailure"
+      required: [windowMonths, analysisDate, patterns]
+
+    PatternFailure:
+      type: object
+      properties:
+        partNumber:
+          type: string
+        partDescription:
+          type: string
+        systemCode:
+          type: string
+        systemName:
+          type: string
+        occurrences:
+          type: number
+        populationAffected:
+          type: number
+        totalPopulation:
+          type: number
+        percentageAffected:
+          type: number
+        predictedRate:
+          type: number
+        actualRate:
+          type: number
+        rateExceedance:
+          type: number
+        isPattern:
+          type: boolean
+        patternType:
+          type: string
+        firstOccurrence:
+          type: string
+        lastOccurrence:
+          type: string
+      required:
+        - partNumber
+        - partDescription
+        - systemCode
+        - systemName
+        - occurrences
+        - populationAffected
+        - totalPopulation
+        - percentageAffected
+        - isPattern
+
+    SummaryReport:
+      type: object
+      properties:
+        totalTrains:
+          type: number
+        totalFailures:
+          type: number
+        serviceFailures:
+          type: number
+        relevantFailures:
+          type: number
+        nonRelevantFailures:
+          type: number
+        openJobCards:
+          type: number
+        mdbf:
+          type: number
+        mdbfTarget:
+          type: number
+        mttr:
+          type: number
+        mttrTarget:
+          type: number
+        availability:
+          type: number
+        availabilityTarget:
+          type: number
+        patternFailureCount:
+          type: number
+        recentFailures:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailureReport"
+        failuresBySystem:
+          type: array
+          items:
+            type: object
+            properties:
+              systemName:
+                type: string
+              count:
+                type: number
+            required: [systemName, count]
+      required:
+        - totalTrains
+        - totalFailures
+        - serviceFailures
+        - relevantFailures
+        - nonRelevantFailures
+        - openJobCards
+        - mdbf
+        - mdbfTarget
+        - mttr
+        - mttrTarget
+        - availability
+        - availabilityTarget
+        - patternFailureCount
+        - recentFailures
+        - failuresBySystem
+
+    FleetDistance:
+      type: object
+      properties:
+        id:
+          type: string
+        trainId:
+          type: string
+        trainNumber:
+          type: string
+        recordDate:
+          type: string
+        cumulativeDistanceKm:
+          type: number
+        dailyDistanceKm:
+          type: number
+        notes:
+          type: string
+        createdAt:
+          type: string
+      required: [id, trainId, trainNumber, recordDate, cumulativeDistanceKm, createdAt]
+
+    CreateFleetDistance:
+      type: object
+      properties:
+        trainId:
+          type: string
+        trainNumber:
+          type: string
+        recordDate:
+          type: string
+        cumulativeDistanceKm:
+          type: number
+        dailyDistanceKm:
+          type: number
+        notes:
+          type: string
+      required: [trainId, trainNumber, recordDate, cumulativeDistanceKm]

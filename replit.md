@@ -1,8 +1,13 @@
-# Workspace
+# FRACAS & RAMS System — KMRC Rolling Stock
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+A complete FRACAS (Failure Reporting and Corrective Action System) and RAMS (Reliability, Availability, Maintainability and Safety) calculation application for KMRC RS(3R) Rolling Stock fleet management.
+
+Based on:
+- BEML RAMS Plan GR/TD/3457 Rev 1
+- KMRC RS(3R) Technical Specification
+- Withdrawal Scenario document (BEML/RS(3R)/TC/Withdrawal Scenario/718)
 
 ## Stack
 
@@ -10,87 +15,80 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **API framework**: Express 5
+- **Frontend**: React + Vite + TailwindCSS + shadcn/ui (artifacts/fracas-rams)
+- **Backend**: Express 5 (artifacts/api-server)
 - **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Validation**: Zod, drizzle-zod
 - **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Charts**: Recharts
+- **Forms**: react-hook-form + zod
+- **CSV I/O**: PapaParse
+
+## Application Features
+
+### FRACAS Module (Job Cards)
+- Create, Read, Update, Delete failure reports (job cards)
+- Auto-generated job card numbers (JC-YYYYMM-####)
+- Failure classification: Relevant, Non-Relevant, Service Failure
+- System/Subsystem taxonomy per KMRC spec (12 systems, 30+ subsystems)
+- Withdrawal scenario mapping
+- Import/Export job cards as CSV or JSON
+- Filter by train, system, date range, failure class
+
+### RAMS Calculations
+- **MDBF** = Total Fleet Distance / Total Service Failures (target: 30,000 km)
+- **MDBCF** = (Total Fleet Distance × Population) / Component Failures (by system)
+- **MTTR** = Total Repair Time / Number of Repairs (target: 240 minutes)
+- **Availability** = (Scheduled Hours − Unavailable Hours) / Scheduled Hours (target: 95%)
+- **Pattern Failure** = 3+ occurrences of same part AND (rate ≥20% above predicted OR ≥20% fleet affected) in 18-month rolling window
+
+### Dashboard
+- Live summary cards for MDBF, MTTR, Availability, Open Job Cards
+- MDBF monthly trend chart
+- Failures by system pie chart
+- Compliance indicators (On Target / Off Target) vs KMRC requirements
+
+### Fleet Management
+- Add/manage trains in fleet
+- Record cumulative and daily running distances per train
+- Fleet status tracking (Active, Maintenance, Withdrawn)
+
+### Withdrawal Scenarios
+- Reference page for all KMRC withdrawal conditions (31 scenarios)
+- Categorized by system
+
+## API Endpoints (all under /api)
+
+- GET/POST /trains
+- GET/POST /failures, GET/PUT/DELETE /failures/:id
+- POST /failures/import, GET /failures/export
+- GET/POST /fleet-distances
+- GET /reports/mdbf
+- GET /reports/mdbcf
+- GET /reports/mttr
+- GET /reports/availability
+- GET /reports/pattern-failures
+- GET /reports/summary
+
+## Database Tables
+
+- `trains` — Fleet registry
+- `failures` — Failure reports (job cards)
+- `fleet_distances` — Cumulative distance records per train
 
 ## Structure
 
 ```text
 artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
+├── artifacts/
+│   ├── api-server/         # Express 5 API backend
+│   │   └── src/routes/     # trains.ts, failures.ts, reports.ts, fleet_distances.ts
+│   └── fracas-rams/        # React + Vite frontend
+│       └── src/pages/      # dashboard, job-cards, reports, fleet, scenarios
+├── lib/
+│   ├── api-spec/           # OpenAPI spec + Orval codegen
 │   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+│   ├── api-zod/            # Generated Zod schemas
+│   └── db/
+│       └── src/schema/     # trains.ts, failures.ts, fleet_distances.ts
 ```
-
-## TypeScript & Composite Projects
-
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
-
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
-
-## Root Scripts
-
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
-
-## Packages
-
-### `artifacts/api-server` (`@workspace/api-server`)
-
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
-
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
-
-### `lib/db` (`@workspace/db`)
-
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
-
-### `lib/api-spec` (`@workspace/api-spec`)
-
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.

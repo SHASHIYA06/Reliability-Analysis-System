@@ -1,0 +1,20 @@
+packages:
+  "recharts": "For rendering RAMS dashboard and trend charts (MDBF, MTTR, etc)"
+  "papaparse": "For CSV Import/Export of Job Cards"
+  "@types/papaparse": "Type definitions for papaparse"
+  "date-fns": "For formatting dates and calculating durations in the frontend"
+  "react-hook-form": "For managing the complex Job Card creation/edit forms"
+  "@hookform/resolvers": "Zod resolver for react-hook-form validation"
+  "zod": "Schema validation for forms"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes without style conflicts"
+
+images:
+  - path: "artifacts/fracas-rams/public/images/auth-bg.png"
+    description: "Dark moody industrial background with abstract glowing orange and cyan elements resembling a high-tech metro maintenance dashboard"
+    aspect_ratio: "16:9"
+
+notes:
+  - Expects all API hooks to be importable from @workspace/api-client-react
+  - Defaulting to a forced dark-mode industrial theme as per requirements
+  - Pattern failure logic relies on backend calculation, frontend just displays the results

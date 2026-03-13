@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "FRACAS & RAMS System"
+version = "1.0.0"
+id = "artifacts/fracas-rams"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 21360
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/fracas-rams run dev"
+
+[services.env]
+PORT = "21360"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/fracas-rams", "run", "build"]
+publicDir = "artifacts/fracas-rams/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
