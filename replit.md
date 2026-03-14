@@ -41,94 +41,113 @@ Users:
 - `BEML/OFFICER/003` — SHIRSHENDU MAJUMDAR (Officer, pw: SHIRSHENDU@1234)
 - `BEML/OFFICER/004` — SUNIL KUMAR RAJAN (Officer, pw: SUNIL@1234)
 
+## Real Data
+
+- **4,270 BEML job cards** imported from `BEML_Master_Job_card_details_as_on_05.03.26_(TS#01_to_14)` CSV
+- **3,132 unique records** after deduplication by job card number (ON CONFLICT upsert)
+- **Train sets**: TS01–TS14 (MR601–MR614), TS15 (spare)
+- **Fleet KM**: 2,058,001 km (from max odometer per train set)
+- **Date range**: Aug 2023 – Mar 2026
+
+Import script: `scripts/import-beml-jobcards.mjs`
+Re-import command: `node scripts/import-beml-jobcards.mjs`
+
 ## Application Features
 
 ### FRACAS Module (Job Cards)
-- Full BEML job card form: Parts A–F matching FM/RS/PPIO/01/01 format
-- 30+ fields: Depot, Order Type (CM/PM/OPM), Train Set (TS01–TS17), Car No (DMC1/TC1/MC1/MC2/TC2/DMC2)
-- Failure Occurred Date/Time, Depot Arrival Date/Time, Expected Complete Date/Time
-- Work Pending, Can Be Energized, Can Be Moved, Withdrawal, Delay toggles
-- Service Distinction (6 types), Delay Duration, Service Checks (PM only)
-- SIC Required / Power Block Required flags
-- Part In/Out Serial Numbers, Root Cause, Corrective Action
-- Auto-generated JC numbers (JC-YYYYMM-####)
-- Fixed CSV import with full BEML column mapping (20+ column aliases)
-- CSV export with all BEML fields
-- CSV template download
-- Advanced filter panel: Depot, TrainSet, System, Status, Class
-- System taxonomy: 14 systems, 50+ subsystems
+- Full BEML job card list with pagination (50/page), FRACAS#, JC#, Issued To, Train/Car, System, KM columns
+- Click any row to open full **job card print view** matching FM/RS/PPIO/01/01 format (Parts A–H)
+- **Print / Save PDF** button generates formatted BEML job card in new window
+- Filters: Depot, Train Set, System, Order Type (CM/PM/OPM), Status, Class, Date Range
+- Import CSV: BEML-format multi-header CSV files
+- Export CSV: All 50+ fields
+- Create/Edit job card form with all BEML fields
 
-### NCR Module
-- Full Non-Conformity Report format matching BEML NCR template
-- NCR number auto-generation (NCR-BEML-RS3R-YYYYMM-###)
-- Fields: Vehicle, Product, Assembly Drawing, Supplier, Detection, Severity (Major/Minor)
-- Material status, Part/Assembly serial numbers, Distribution list
-- Cause of Non-Conformity, Correction Actions, Decision (7 types)
-- Linked to Job Card numbers
-- Status tracking: Open → Under Investigation → Corrective Action → Closed
-- Summary stats dashboard panel
-- CSV export
+### RAMS Module (Dashboard & Reports)
+- **Dashboard**: Live KPI cards — MDBF, MTTR, Availability with target compliance
+- **MDBF calculation**: Fleet KM (sum of max odometer per trainSet) / CM failures
+  - Fleet KM = 2,058,001 km from real job card odometer data
+  - CM failures from orderType='CM' as service-affecting proxy
+- **MTTR**: Average repair duration from job cards with repair time (1,541 records, ~396 min avg)
+- **Availability**: (Scheduled hours - downtime) / scheduled hours = 98.38%
+- **Monthly trend chart**: 18 months of failure data
+- **System breakdown bar chart**: Top 10 systems by job card count
+- **Train set bar chart**: TS01–TS14 distribution
+- Detailed MDBF, MDBCF, MTTR, Availability, Pattern Failure reports (separate pages)
 
-### RAMS Calculations
-- **MDBF** = Total Fleet Distance / Total Service Failures (target: 30,000 km)
-- **MDBCF** = (Total Fleet Distance × Population) / Component Failures by system
-- **MTTR** = Total Repair Time / Number of Repairs (target: 240 minutes)
-- **Availability** = (Scheduled Hours − Unavailable Hours) / Scheduled Hours (target: 95%)
-- **Pattern Failure** = 3+ occurrences of same part AND (rate ≥20% above predicted OR ≥20% fleet affected) in 18-month rolling window
-
-### Dashboard
-- Live MDBF, MTTR, Availability, Open Job Cards KPI cards
-- MDBF monthly trend chart vs 30,000 km target
-- Failures by system pie chart
-- Recent job cards table
+### NCR Management
+- Create/Edit NCR records with full BEML fields
+- **Print NCR as PDF**: Opens formatted NCR document in new window
+- Import NCRs from CSV (auto-mapped column headers)
+- Export NCR list to CSV
 
 ### Fleet Management
-- Train registry (RS-3R-01 to RS-3R-17+)
-- Daily/cumulative distance recording per train
+- Train fleet table with status
+- Fleet distance tracking (manually entered KM records)
+- KMRC RS-3R specific train numbering (MR601–MR614 → TS01–TS14)
 
-### Withdrawal Scenarios
-- Reference page for all withdrawal conditions (W01–W16)
+## Key Files
 
-## API Endpoints (all under /api)
-
-- GET/POST /trains
-- GET/POST /failures, GET/PUT/DELETE /failures/:id
-- POST /failures/import, GET /failures/export
-- GET/POST /fleet-distances
-- GET/POST /ncr, GET/PUT/DELETE /ncr/:id
-- GET /reports/mdbf, /reports/mdbcf, /reports/mttr, /reports/availability
-- GET /reports/pattern-failures, /reports/summary
-
-## Database Tables
-
-- `trains` — Fleet registry
-- `failures` — Full BEML job card records (50+ columns)
-- `fleet_distances` — Cumulative distance records per train
-- `ncr` — Non-Conformity Reports
-
-## DB Migration
-
-Run: `pnpm --filter @workspace/db run push-force`
-
-## Structure
-
-```text
-├── artifacts/
-│   ├── api-server/src/routes/     # trains, failures, reports, fleet_distances, ncr
-│   └── fracas-rams/src/
-│       ├── contexts/auth-context  # Auth with BEML users
-│       ├── pages/
-│       │   ├── login.tsx          # BEML login page
-│       │   ├── dashboard.tsx      # KPI + charts
-│       │   ├── job-cards/         # FRACAS job card management
-│       │   ├── ncr/               # NCR management
-│       │   ├── reports/           # RAMS reports (tabbed)
-│       │   ├── fleet/             # Fleet management
-│       │   └── scenarios.tsx      # Withdrawal scenarios
-│       └── lib/taxonomy.ts        # Systems, depots, train sets, car numbers
-├── lib/
-│   ├── api-spec/                  # OpenAPI spec + Orval codegen
-│   ├── api-client-react/          # Generated React Query hooks
-│   ├── api-zod/                   # Generated Zod schemas
-│   └── db/src/schema/             # trains, failures, fleet_distances, ncr
 ```
+artifacts/api-server/src/routes/
+  failures.ts          — Job card CRUD + import/export + stats
+  reports.ts           — RAMS calculations (MDBF/MDBCF/MTTR/Availability/Pattern)
+  ncr.ts               — NCR CRUD + import
+  
+artifacts/fracas-rams/src/pages/
+  dashboard.tsx         — RAMS dashboard with KPI cards + charts
+  job-cards/
+    index.tsx           — Job card list, import, export, filters
+    job-card-print.tsx  — Full BEML job card print view (Parts A–H)
+    job-card-form.tsx   — Create/edit job card form
+  ncr/
+    index.tsx           — NCR list + print + CSV import/export
+    ncr-form.tsx        — NCR create/edit form
+  reports/index.tsx     — Detailed RAMS reports
+
+lib/db/src/schema/
+  failures.ts           — ~100 column job card schema
+  
+scripts/
+  import-beml-jobcards.mjs  — BEML CSV → PostgreSQL import script
+```
+
+## RAMS Targets (RS-3R Contract)
+
+| Metric | Target | Current |
+|--------|--------|---------|
+| MDBF | ≥ 30,000 km | 8,039 km (CM failures proxy) |
+| MTTR | ≤ 240 min | 396 min |
+| Availability | ≥ 95% | 98.38% |
+
+Note: MDBF uses CM orderType as service-failure proxy since raw data lacks explicit service-failure classification.
+
+## Important Commands
+
+```bash
+# Re-import BEML job cards from CSV
+node scripts/import-beml-jobcards.mjs
+
+# DB schema push (if schema changes)
+pnpm --filter @workspace/db run push-force
+
+# Start servers
+pnpm --filter @workspace/api-server run dev  # port 8080
+pnpm --filter @workspace/fracas-rams run dev  # port 21360
+```
+
+## API Endpoints
+
+- `GET /api/failures` — list all job cards (with filters: trainId, system, failureClass, startDate, endDate, depot, status, trainSet, orderType)
+- `POST /api/failures` — create job card
+- `GET /api/failures/stats` — aggregated stats by system/trainSet/month
+- `POST /api/failures/import` — bulk import (records[], clearFirst?)
+- `GET /api/failures/export` — export all
+- `GET /api/reports/summary` — RAMS dashboard data
+- `GET /api/reports/mdbf` — MDBF report
+- `GET /api/reports/mdbcf` — MDBCF report
+- `GET /api/reports/mttr` — MTTR report
+- `GET /api/reports/availability` — Availability report
+- `GET /api/reports/pattern-failures` — Pattern failure analysis
+- `GET/POST/PUT/DELETE /api/ncr` — NCR management
+- `POST /api/ncr/import` — bulk NCR import

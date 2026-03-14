@@ -112,4 +112,46 @@ router.delete("/ncr/:id", async (req, res) => {
   }
 });
 
+router.post("/ncr/import", async (req, res) => {
+  try {
+    const { records, clearFirst } = req.body;
+    if (!Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({ error: "records must be a non-empty array" });
+    }
+    if (clearFirst) await db.delete(ncrTable);
+    let imported = 0;
+    const errors: string[] = [];
+    for (const row of records) {
+      try {
+        const record = {
+          id: randomUUID(),
+          ncrNumber: row.ncrNumber || row["NCR Number"] || row["NCR No"] || generateNcrNumber(),
+          projectName: row.projectName || row["Project"] || "KMRCL RS-3R",
+          vehicleNumber: row.vehicleNumber || row["Vehicle Number"] || row["Vehicle No"] || null,
+          productName: row.productName || row["Product"] || row["Component"] || null,
+          supplier: row.supplier || row["Supplier"] || row["OEM"] || null,
+          detectionDate: row.detectionDate || row["Detection Date"] || row["Date"] || null,
+          place: row.place || row["Place"] || null,
+          severity: (row.severity || row["Severity"] || "minor").toLowerCase(),
+          responsibleParty: row.responsibleParty || row["Responsible Party"] || null,
+          description: row.description || row["Description"] || row["Non-Conformance Description"] || "Imported NCR",
+          issuedBy: row.issuedBy || row["Issued By"] || null,
+          issueDate: row.issueDate || row["Issue Date"] || row.detectionDate || null,
+          decision: row.decision || row["Decision"] || null,
+          status: (row.status || row["Status"] || "open").toLowerCase(),
+          linkedJobCardNumber: row.linkedJobCardNumber || row["Job Card No"] || row["JC No"] || null,
+        };
+        await db.insert(ncrTable).values(record as any);
+        imported++;
+      } catch (e: any) {
+        errors.push(`${row.ncrNumber || "row"}: ${e.message}`);
+      }
+    }
+    res.json({ imported, failed: errors.length, errors });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to import NCRs" });
+  }
+});
+
 export default router;

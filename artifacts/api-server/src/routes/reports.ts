@@ -26,12 +26,22 @@ router.get("/reports/mdbf", async (req, res) => {
     const serviceFailures = await db.select().from(failuresTable).where(and(...allConditions));
     const allTrains = await db.select().from(trainsTable).where(eq(trainsTable.status, "active"));
     const distances = await db.select().from(fleetDistancesTable);
+    const allJobCards = await db.select().from(failuresTable);
 
-    // Calculate total fleet distance per train (max cumulative distance)
+    // Calculate total fleet distance per train
     const trainDistances: Record<string, number> = {};
     for (const d of distances) {
       if (!trainDistances[d.trainId] || d.cumulativeDistanceKm > trainDistances[d.trainId]) {
         trainDistances[d.trainId] = d.cumulativeDistanceKm;
+      }
+    }
+    if (Object.keys(trainDistances).length === 0) {
+      for (const f of allJobCards) {
+        const key = f.trainSet || f.trainId;
+        if (key && f.trainDistanceAtFailure) {
+          const dist = Number(f.trainDistanceAtFailure);
+          if (!trainDistances[key] || dist > trainDistances[key]) trainDistances[key] = dist;
+        }
       }
     }
 
@@ -385,17 +395,35 @@ router.get("/reports/summary", async (_req, res) => {
     const nonRelevantFailures = allFailures.filter(f => f.failureClass === "non-relevant");
     const openJobCards = allFailures.filter(f => f.status === "open" || f.status === "in-progress");
 
-    // Fleet distance
-    const trainDistances: Record<string, number> = {};
-    for (const d of distances) {
-      if (!trainDistances[d.trainId] || d.cumulativeDistanceKm > trainDistances[d.trainId]) {
-        trainDistances[d.trainId] = d.cumulativeDistanceKm;
+    // Fleet distance — prefer real odometer data from job cards (most accurate)
+    const kmResult = await db.execute(sql`
+      SELECT COALESCE(SUM(max_km), 0)::float as total
+      FROM (
+        SELECT train_set, MAX(train_distance_at_failure) as max_km
+        FROM failures
+        WHERE train_set IS NOT NULL AND train_set ~ '^TS' AND train_distance_at_failure > 0
+        GROUP BY train_set
+      ) t
+    `);
+    let totalFleetDistance = parseFloat(String((kmResult.rows[0] as any)?.total || 0));
+    // Fallback: use fleet distances table if no job card KM data
+    if (totalFleetDistance === 0 && distances.length > 0) {
+      const trainDistancesMap: Record<string, number> = {};
+      for (const d of distances) {
+        if (!trainDistancesMap[d.trainId] || d.cumulativeDistanceKm > trainDistancesMap[d.trainId]) {
+          trainDistancesMap[d.trainId] = d.cumulativeDistanceKm;
+        }
       }
+      totalFleetDistance = Object.values(trainDistancesMap).reduce((sum, d) => sum + d, 0);
     }
-    const totalFleetDistance = Object.values(trainDistances).reduce((sum, d) => sum + d, 0);
 
-    // MDBF
-    const mdbf = serviceFailures.length > 0 ? totalFleetDistance / serviceFailures.length : totalFleetDistance;
+    // MDBF — service-affecting failures (CM corrective orders or delay=true or failureClass=service-failure)
+    const cmFailures = allFailures.filter(f =>
+      f.failureClass === "service-failure" ||
+      f.orderType === "CM" ||
+      f.delay === true
+    );
+    const mdbf = cmFailures.length > 0 ? totalFleetDistance / cmFailures.length : 0;
 
     // MTTR
     const withRepair = allFailures.filter(f => f.repairDurationMinutes != null && f.repairDurationMinutes > 0);
@@ -407,8 +435,12 @@ router.get("/reports/summary", async (_req, res) => {
     const days = 365;
     const hoursPerDay = 18;
     const scheduledHoursPerTrain = days * hoursPerDay;
-    const totalScheduledHours = allTrains.length * scheduledHoursPerTrain;
-    const unavailableMinutes = serviceFailures.reduce((sum, f) => sum + (f.repairDurationMinutes || 0), 0);
+    // Count active train sets from job cards (TS01-TS14), min 14
+    const activeTrainSets = new Set(allFailures.map(f => f.trainSet).filter(ts => ts && /^TS\d+$/i.test(ts)));
+    const numTrains = Math.max(allTrains.length, activeTrainSets.size, 14);
+    const totalScheduledHours = numTrains * scheduledHoursPerTrain;
+    // Downtime from CM failures (service-affecting)
+    const unavailableMinutes = cmFailures.reduce((sum, f) => sum + (f.repairDurationMinutes || 0), 0);
     const availability = totalScheduledHours > 0
       ? Math.max(0, (totalScheduledHours - unavailableMinutes / 60) / totalScheduledHours)
       : 1;
@@ -431,19 +463,46 @@ router.get("/reports/summary", async (_req, res) => {
     // By system
     const systemCounts: Record<string, number> = {};
     for (const f of allFailures) {
-      systemCounts[f.systemName] = (systemCounts[f.systemName] || 0) + 1;
+      const key = f.systemName || "General";
+      systemCounts[key] = (systemCounts[key] || 0) + 1;
     }
     const failuresBySystem = Object.entries(systemCounts)
       .map(([systemName, count]) => ({ systemName, count }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12);
+
+    // Monthly trend
+    const monthlyMap: Record<string, { total: number; service: number }> = {};
+    for (const f of allFailures) {
+      const month = (f.failureDate || "").substring(0, 7);
+      if (!month) continue;
+      if (!monthlyMap[month]) monthlyMap[month] = { total: 0, service: 0 };
+      monthlyMap[month].total++;
+      if (f.failureClass === "service-failure" || f.delay) monthlyMap[month].service++;
+    }
+    const monthlyTrend = Object.entries(monthlyMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-18)
+      .map(([month, d]) => ({ period: month, failures: d.total, serviceFailures: d.service }));
+
+    // By trainSet
+    const byTrainSet: Record<string, number> = {};
+    for (const f of allFailures) {
+      const ts = f.trainSet || "Other";
+      byTrainSet[ts] = (byTrainSet[ts] || 0) + 1;
+    }
+    const failuresByTrainSet = Object.entries(byTrainSet)
+      .map(([trainSet, count]) => ({ trainSet, count }))
+      .sort((a, b) => a.trainSet.localeCompare(b.trainSet));
 
     res.json({
-      totalTrains: allTrains.length,
+      totalTrains: numTrains,
       totalFailures: allFailures.length,
       serviceFailures: serviceFailures.length,
       relevantFailures: relevantFailures.length,
       nonRelevantFailures: nonRelevantFailures.length,
       openJobCards: openJobCards.length,
+      totalFleetDistance,
       mdbf,
       mdbfTarget: MDBF_TARGET,
       mttr,
@@ -453,6 +512,8 @@ router.get("/reports/summary", async (_req, res) => {
       patternFailureCount,
       recentFailures,
       failuresBySystem,
+      monthlyTrend,
+      failuresByTrainSet,
     });
   } catch (err) {
     console.error(err);

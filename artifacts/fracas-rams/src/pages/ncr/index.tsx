@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { format } from "date-fns";
-import { Plus, Search, Edit, Trash2, ClipboardList, Download, Filter, X } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ClipboardList, Download, Filter, X, Upload, Printer, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -40,6 +40,87 @@ const statusBadge: Record<string, { variant: any; label: string }> = {
   "rejected": { variant: "outline", label: "Rejected" },
 };
 
+async function importNcr(records: any[]): Promise<void> {
+  const res = await fetch(`${BASE}/api/ncr/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ records }),
+  });
+  if (!res.ok) throw new Error("Import failed");
+}
+
+function printNcr(ncr: Ncr): void {
+  const date = (d?: string) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day:"2-digit", month:"2-digit", year:"numeric" }) : "—";
+  const content = `
+    <html><head><title>NCR - ${ncr.ncrNumber}</title><style>
+      *{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10pt;color:#000;padding:15mm 20mm}
+      .hdr{border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start}
+      .brand{display:flex;gap:8px;align-items:center}.logo{width:40px;height:40px;background:#E31E24;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:18pt}
+      .title{text-align:center;flex:1}.title h2{font-size:15pt;font-weight:bold;letter-spacing:2px}.title p{font-size:8pt;color:#555}
+      .docref{text-align:right;font-size:8pt;font-family:monospace}
+      .meta{display:flex;gap:20px;margin:8px 0;font-size:9pt;flex-wrap:wrap}
+      .part{border:1px solid #000;margin-bottom:8px}.ph{background:#ddd;font-weight:bold;padding:3px 6px;border-bottom:1px solid #000;font-size:9pt}
+      .pb{padding:6px 8px;font-size:9pt}.row{display:flex;gap:16px;margin-bottom:4px;flex-wrap:wrap}
+      .fld{flex:1;min-width:150px}.fld label{font-weight:bold;display:block;font-size:8.5pt}.fld span{border-bottom:1px solid #aaa;display:block;min-height:14px;font-size:9pt}
+      .desc{border:1px solid #aaa;min-height:36px;padding:3px;white-space:pre-wrap;font-size:9pt}
+      .sig{display:flex;justify-content:space-between;margin-top:12px}.sblk{text-align:center;flex:1;margin:0 8px}
+      .sblk span{display:block;border-top:1px solid #000;padding-top:2px;font-size:8pt}
+      .sev{padding:2px 10px;border-radius:12px;font-weight:bold;font-size:9pt;${ncr.severity==="major"?"background:#ffe0e0;color:#c00":"background:#fff7e0;color:#a06000"}}
+    </style></head><body>
+      <div class="hdr">
+        <div class="brand"><div class="logo">B</div><div><div style="font-weight:bold;color:#E31E24;font-size:13pt">BEML</div><div style="font-size:7pt">BHARAT EARTH MOVERS LTD.</div></div></div>
+        <div class="title"><h2>NON-CONFORMITY REPORT</h2><p>KMRCL RS-3R Rolling Stock · ${ncr.projectName || "KMRC Project"}</p></div>
+        <div class="docref"><div><strong>${ncr.ncrNumber}</strong></div><div>FM/RS/NCR/01/00</div></div>
+      </div>
+      <div class="meta">
+        <span><strong>NCR Number:</strong> <b>${ncr.ncrNumber}</b></span>
+        <span><strong>Date Raised:</strong> ${date(ncr.issueDate || ncr.detectionDate)}</span>
+        <span><strong>Severity:</strong> <span class="sev">${(ncr.severity||"—").toUpperCase()}</span></span>
+        <span><strong>Status:</strong> ${ncr.status?.toUpperCase() || "—"}</span>
+      </div>
+      <div class="part"><div class="ph">Section A: Non-Conformance Identification</div><div class="pb">
+        <div class="row">
+          <div class="fld"><label>Vehicle/Train Number</label><span>${ncr.vehicleNumber||"—"}</span></div>
+          <div class="fld"><label>Product/Component</label><span>${ncr.productName||"—"}</span></div>
+          <div class="fld"><label>Supplier/OEM</label><span>${ncr.supplier||"—"}</span></div>
+        </div>
+        <div class="row">
+          <div class="fld"><label>Place of Detection</label><span>${ncr.place||"—"}</span></div>
+          <div class="fld"><label>Date of Detection</label><span>${date(ncr.detectionDate)}</span></div>
+          <div class="fld"><label>Responsible Party</label><span>${ncr.responsibleParty||"—"}</span></div>
+        </div>
+        <div style="margin-top:6px"><label style="font-weight:bold">Non-Conformance Description:</label>
+          <div class="desc">${ncr.description||"—"}</div></div>
+        ${ncr.linkedJobCardNumber ? `<div style="margin-top:4px"><strong>Linked Job Card:</strong> ${ncr.linkedJobCardNumber}</div>` : ""}
+      </div></div>
+      <div class="part"><div class="ph">Section B: Disposition & Decision</div><div class="pb">
+        <div class="row">
+          <div class="fld" style="min-width:300px"><label>Disposition Decision</label><span>${ncr.decision||"—"}</span></div>
+        </div>
+        <div style="margin-top:4px"><label style="font-weight:bold">Follow-up Action Required:</label>
+          <div class="desc" style="min-height:24px">&nbsp;</div></div>
+      </div></div>
+      <div class="part"><div class="ph">Section C: Verification of Closure</div><div class="pb">
+        <div class="row">
+          <div class="fld"><label>Issued By</label><span>${ncr.issuedBy||"—"}</span></div>
+          <div class="fld"><label>Issue Date</label><span>${date(ncr.issueDate)}</span></div>
+        </div>
+        <div class="sig">
+          <div class="sblk"><span>BEML Site Engineer</span></div>
+          <div class="sblk"><span>PPIO Shift Engineer</span></div>
+          <div class="sblk"><span>Quality Assurance</span></div>
+          <div class="sblk"><span>Date of Closure</span></div>
+        </div>
+      </div></div>
+      <div style="text-align:center;font-size:8pt;color:#555;margin-top:8px">BEML Rolling Stock Division · KMRC RS-3R · ${ncr.ncrNumber}</div>
+    </body></html>`;
+  const w = window.open("","_blank");
+  if(!w) return;
+  w.document.write(content);
+  w.document.close();
+  setTimeout(()=>w.print(), 300);
+}
+
 export default function NCR() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -47,6 +128,7 @@ export default function NCR() {
   const [showFilters, setShowFilters] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editing, setEditing] = useState<Ncr | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -81,6 +163,25 @@ export default function NCR() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    Papa.parse(file, {
+      header: true, skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const records = results.data as any[];
+          await importNcr(records);
+          queryClient.invalidateQueries({ queryKey: ["ncr"] });
+          toast({ title: `${records.length} NCRs imported` });
+        } catch (err: any) {
+          toast({ title: "Import failed", description: err?.message, variant: "destructive" });
+        }
+      }
+    });
+  };
+
   const hasFilters = filterStatus || filterSeverity;
 
   return (
@@ -90,18 +191,20 @@ export default function NCR() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">NCR Management</h1>
           <p className="text-muted-foreground mt-1">Non-Conformity Reports · BEML RS-3R · KMRC Project</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <input ref={fileInputRef} type="file" className="hidden" accept=".csv" onChange={handleImport} id="ncr-import" />
+          <Button variant="outline" size="sm" asChild>
+            <label htmlFor="ncr-import" className="cursor-pointer"><Upload className="w-3.5 h-3.5 mr-1.5" />Import CSV</label>
+          </Button>
           <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="w-3.5 h-3.5 mr-1.5" />
-            Export
+            <Download className="w-3.5 h-3.5 mr-1.5" />Export CSV
           </Button>
           <Button
             size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
             onClick={() => { setEditing(null); setIsFormOpen(true); }}
           >
-            <Plus className="w-4 h-4 mr-1.5" />
-            New NCR
+            <Plus className="w-4 h-4 mr-1.5" />New NCR
           </Button>
         </div>
       </div>
@@ -228,6 +331,9 @@ export default function NCR() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-blue-400" onClick={() => printNcr(ncr)} title="Print / Save PDF">
+                            <Printer className="w-3.5 h-3.5" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary" onClick={() => { setEditing(ncr); setIsFormOpen(true); }}>
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
