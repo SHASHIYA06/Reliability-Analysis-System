@@ -4,6 +4,7 @@ import trainsRouter from "./trains";
 import failuresRouter from "./failures";
 import reportsRouter from "./reports";
 import fleetDistancesRouter from "./fleet_distances";
+import ncrRouter from "./ncr";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(trainsRouter);
 router.use(failuresRouter);
 router.use(reportsRouter);
 router.use(fleetDistancesRouter);
+router.use(ncrRouter);
 
 export default router;

@@ -9,11 +9,15 @@ import {
   Settings,
   Bell,
   Search,
-  Menu
+  Menu,
+  ClipboardList,
+  LogOut,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,23 +28,47 @@ const navItems = [
   { icon: Wrench, label: "Job Cards (FRACAS)", href: "/job-cards" },
   { icon: FileBarChart, label: "RAMS Reports", href: "/reports" },
   { icon: Train, label: "Fleet Management", href: "/fleet" },
+  { icon: ClipboardList, label: "NCR Management", href: "/ncr" },
   { icon: BookOpen, label: "Withdrawal Scenarios", href: "/scenarios" },
 ];
 
+function BEMLLogo() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="relative flex-shrink-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-600/50 to-red-800/50 rounded-lg blur-sm" />
+        <div className="relative w-9 h-9 rounded-lg bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shadow-lg border border-red-500/30">
+          <span className="text-white font-black text-lg leading-none" style={{ fontFamily: "system-ui" }}>B</span>
+        </div>
+      </div>
+      <div className="leading-tight">
+        <div className="font-black text-base tracking-tight">
+          <span style={{ color: "#E31E24" }}>BEML</span>
+          <span className="text-foreground"> FRACAS</span>
+        </div>
+        <div className="text-[9px] text-muted-foreground font-medium tracking-widest uppercase">RS-3R · RAMS System</div>
+      </div>
+    </div>
+  );
+}
+
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
+  const { user, logout, isAdmin } = useAuth();
+
+  const roleLabel = {
+    admin: "Admin",
+    engineer: "Engineer",
+    officer: "Officer",
+    "data-entry": "Data Entry",
+  }[user?.role || ""] || "";
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 border-r border-border/50 bg-card/50 flex flex-col backdrop-blur-xl relative z-10">
-        <div className="h-16 flex items-center px-6 border-b border-border/50">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-primary-foreground font-bold font-mono">
-              KR
-            </div>
-            <span className="font-bold text-lg tracking-tight">FRACAS<span className="text-primary">RAMS</span></span>
-          </div>
+        <div className="h-16 flex items-center px-4 border-b border-border/50">
+          <BEMLLogo />
         </div>
         
         <div className="p-4 flex-1 overflow-y-auto">
@@ -58,7 +86,7 @@ export function Layout({ children }: LayoutProps) {
                       ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_15px_rgba(249,115,22,0.1)]" 
                       : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                   )}>
-                    <item.icon className={cn("w-5 h-5", isActive ? "text-primary" : "opacity-70")} />
+                    <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-primary" : "opacity-70")} />
                     {item.label}
                   </div>
                 </Link>
@@ -67,11 +95,18 @@ export function Layout({ children }: LayoutProps) {
           </nav>
         </div>
         
-        <div className="p-4 border-t border-border/50">
+        <div className="p-4 border-t border-border/50 space-y-1">
           <div className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-lg hover:bg-white/5">
-            <Settings className="w-5 h-5 opacity-70" />
+            <Settings className="w-5 h-5 opacity-70 flex-shrink-0" />
             System Settings
           </div>
+          <button 
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors cursor-pointer rounded-lg hover:bg-destructive/10"
+          >
+            <LogOut className="w-5 h-5 opacity-70 flex-shrink-0" />
+            Sign Out
+          </button>
         </div>
       </aside>
 
@@ -85,7 +120,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="relative w-64 hidden md:block">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input 
-                placeholder="Search job cards, parts..." 
+                placeholder="Search job cards, NCR, parts..." 
                 className="pl-9 bg-card/50 border-border/50 focus-visible:ring-primary/50"
               />
             </div>
@@ -93,21 +128,28 @@ export function Layout({ children }: LayoutProps) {
           
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               <span className="text-xs text-muted-foreground font-mono">SYS.ONLINE</span>
             </div>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary"></span>
             </Button>
-            <div className="w-8 h-8 rounded-full bg-secondary/20 border border-secondary/50 flex items-center justify-center text-sm font-medium text-secondary">
-              AD
-            </div>
+            {user && (
+              <div className="flex items-center gap-2 cursor-pointer group">
+                <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary">
+                  {user.initials}
+                </div>
+                <div className="hidden sm:block text-xs leading-tight">
+                  <div className="font-medium text-foreground truncate max-w-[120px]">{user.name.split(" ")[0]} {user.name.split(" ")[1]?.[0]}.</div>
+                  <div className="text-muted-foreground">{roleLabel}</div>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
         <main className="flex-1 overflow-auto p-6 relative">
-          {/* Subtle background glow effect */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
           <div className="relative z-10 h-full">
             {children}
