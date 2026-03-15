@@ -201,3 +201,16 @@ pnpm --filter @workspace/fracas-rams run dev  # port 21360
 - `GET /api/reports/pattern-failures` — Pattern failure analysis
 - `GET/POST/PUT/DELETE /api/ncr` — NCR management
 - `POST /api/ncr/import` — bulk NCR import
+- `GET/POST/PUT/DELETE /api/eir` — Equipment Inspection Report (EIR) CRUD
+- `GET /api/eir/stats/counts` — EIR open/in-progress/closed counts
+- `GET/POST/PUT/DELETE /api/rsoi` — Record of Site Operations & Inspections CRUD
+- `GET /api/rsoi/stats/counts` — RSOI open/in-progress/closed counts
+- `GET/POST/PUT/DELETE /api/dlp` — DLP items CRUD
+- `GET /api/dlp/stats/counts` — DLP expired/critical/total counts
+- `GET/POST/PUT/DELETE /api/tools` — Tools management CRUD
+- `GET/POST/PUT/DELETE /api/inventory` — Inventory management CRUD
+- `GET /api/inventory/stats/low-stock` — Count of items below minimum stock
+- `GET/POST/PUT/DELETE /api/gate-pass` — Gate Pass CRUD
+- `GET /api/gate-pass/stats/counts` — Gate pass open/closed/pending counts
+- `POST /api/ai/root-cause` — Gemini AI root-cause analysis (body: system, description, failureCategory, durationHours)
+- `POST /api/ai/analyze-failures` — Gemini AI fleet failure pattern analysis

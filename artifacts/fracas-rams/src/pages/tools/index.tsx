@@ -1,4 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function dbToTool(r: any): Tool {
+  return { id: r.id, name: r.toolName || "", toolNo: r.toolNumber || r.toolId || "", category: r.category || "", location: r.location || "", condition: r.condition || "Good", calibrationDue: r.calibrationDue || "", assignedTo: r.issuedTo || "", qty: r.qty || 1, remarks: r.remarks || "" };
+}
+
+function toolToDb(t: Tool): any {
+  return { id: t.id, toolId: t.toolNo, toolName: t.name, toolNumber: t.toolNo, category: t.category, location: t.location, condition: t.condition, calibrationDue: t.calibrationDue, issuedTo: t.assignedTo, qty: t.qty, remarks: t.remarks };
+}
 import { format } from "date-fns";
 import { Wrench, Plus, Search, Download, AlertCircle, Upload, Edit2, Trash2, ArrowRightLeft, MoreVertical, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,7 +74,12 @@ export default function ToolsPage() {
   const [filterCat, setFilterCat] = useState("");
   const [filterCond, setFilterCond] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [tools, setTools] = useState<Tool[]>(INITIAL_TOOLS);
+  const [tools, setTools] = useState<Tool[]>([]);
+
+  const fetchTools = useCallback(async () => {
+    try { const res = await fetch(`${BASE}/api/tools`); if (res.ok) { const data = await res.json(); setTools(data.map(dbToTool)); } } catch {}
+  }, []);
+  useEffect(() => { fetchTools(); }, [fetchTools]);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<typeof BLANK_FORM>({ ...BLANK_FORM });
   const [showIssue, setShowIssue] = useState<Tool | null>(null);
@@ -91,41 +106,46 @@ export default function ToolsPage() {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.toolNo) {
       toast({ title: "Required Fields Missing", description: "Tool Name and Tool No. are required.", variant: "destructive" }); return;
     }
+    const payload = toolToDb({ id: editId || "", ...form, qty: Number(form.qty) || 1, assignedTo: "" });
     if (editId) {
-      setTools(prev => prev.map(t => t.id === editId ? { ...t, ...form, qty: Number(form.qty) || 1 } : t));
+      await fetch(`${BASE}/api/tools/${editId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       toast({ title: "Tool Updated", description: `${editId} updated successfully.` });
     } else {
       const n = `TOOL-${String(tools.length + 1).padStart(3, "0")}`;
-      setTools(prev => [...prev, { id: n, ...form, qty: Number(form.qty) || 1, assignedTo: "" }]);
+      await fetch(`${BASE}/api/tools`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, id: n }) });
       toast({ title: "Tool Added", description: `${n} — ${form.name} added to register.` });
     }
     setShowForm(false);
+    fetchTools();
   };
 
-  const handleDelete = (t: Tool) => {
-    setTools(prev => prev.filter(x => x.id !== t.id));
+  const handleDelete = async (t: Tool) => {
+    await fetch(`${BASE}/api/tools/${t.id}`, { method: "DELETE" });
     toast({ title: "Tool Removed", description: `${t.id} removed from register.` });
+    fetchTools();
   };
 
-  const handleIssueReturn = (t: Tool) => {
+  const handleIssueReturn = async (t: Tool) => {
     if (t.assignedTo) {
-      setTools(prev => prev.map(x => x.id === t.id ? { ...x, assignedTo: "", remarks: x.remarks + " [Returned]" } : x));
+      await fetch(`${BASE}/api/tools/${t.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(toolToDb({ ...t, assignedTo: "", remarks: t.remarks + " [Returned]" })) });
       toast({ title: "Tool Returned", description: `${t.name} returned to tool store.` });
+      fetchTools();
     } else {
       setShowIssue(t);
       setIssueUser("");
     }
   };
 
-  const confirmIssue = () => {
+  const confirmIssue = async () => {
     if (!showIssue || !issueUser) { toast({ title: "Select User", variant: "destructive" }); return; }
-    setTools(prev => prev.map(x => x.id === showIssue.id ? { ...x, assignedTo: issueUser } : x));
+    await fetch(`${BASE}/api/tools/${showIssue.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(toolToDb({ ...showIssue, assignedTo: issueUser })) });
     toast({ title: "Tool Issued", description: `${showIssue.name} issued to ${issueUser}.` });
     setShowIssue(null);
+    fetchTools();
   };
 
   const exportCSV = () => {

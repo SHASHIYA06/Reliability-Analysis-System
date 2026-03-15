@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { X, Save, AlertCircle, Wrench, CheckCircle2, User, FileText, Settings2, MapPin } from "lucide-react";
+import { X, Save, AlertCircle, Wrench, CheckCircle2, User, FileText, Settings2, MapPin, Sparkles, Loader2 } from "lucide-react";
 import {
   useCreateFailure,
   useUpdateFailure,
@@ -24,6 +24,8 @@ import {
   JOB_OPERATING_CONDITIONS, BEML_USERS, TRAIN_NUMBER_TO_SET,
 } from "@/lib/taxonomy";
 import { useAuth } from "@/contexts/auth-context";
+
+const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const YES_NO = [
   { value: "yes", label: "Yes" },
@@ -230,6 +232,32 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
   const watchSicRequired      = form.watch("sicRequired");
   const watchEffectsOnService = form.watch("effectsOnService");
   const watchPartReplaced     = form.watch("partReplaced");
+
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const suggestRootCause = async () => {
+    const vals = form.getValues();
+    const systemCode = vals.systemCode;
+    const sysObj = SYSTEM_TAXONOMY.find(s => s.code === systemCode);
+    const systemName = sysObj?.name || systemCode || "Unknown";
+    const description = vals.failureDescription || "";
+    if (!description.trim()) {
+      toast({ title: "Add Failure Description first", description: "Enter the failure description before requesting AI analysis.", variant: "destructive" }); return;
+    }
+    setAiLoading(true);
+    try {
+      const res = await fetch(`${BASE_API}/api/ai/root-cause`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ system: systemName, description, failureCategory: vals.failureCategory, durationHours: vals.repairDurationMinutes ? vals.repairDurationMinutes / 60 : undefined }),
+      });
+      if (!res.ok) throw new Error("AI request failed");
+      const { answer } = await res.json();
+      form.setValue("rootCause", answer, { shouldDirty: true });
+      toast({ title: "AI Root Cause Generated", description: "Review and edit the AI suggestion as needed." });
+    } catch {
+      toast({ title: "AI Analysis Failed", description: "Could not reach the AI service. Please try again.", variant: "destructive" });
+    } finally { setAiLoading(false); }
+  };
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -662,7 +690,20 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
                   ]} />
                 </FieldRow>
                 <TA name="actionTaken" label="Description of Actions Taken" rows={3} placeholder="All actions performed to resolve the failure..." />
-                <TA name="rootCause" label="Root Cause" rows={2} placeholder="Root cause investigation / analysis..." />
+                <FormField control={form.control} name="rootCause" render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between mb-1">
+                      <FormLabel>Root Cause</FormLabel>
+                      <Button type="button" variant="outline" size="sm" className="h-6 text-[10px] gap-1 border-primary/40 text-primary hover:bg-primary/10" onClick={suggestRootCause} disabled={aiLoading}>
+                        {aiLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</> : <><Sparkles className="w-3 h-3" /> AI Suggest</>}
+                      </Button>
+                    </div>
+                    <FormControl>
+                      <Textarea {...field} value={field.value ?? ""} className="bg-background resize-none" rows={4} placeholder="Root cause investigation / analysis... (or click AI Suggest to auto-generate)" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <TA name="correctiveAction" label="Corrective Action / Follow-up" rows={2} placeholder="Long-term corrective action..." />
 
                 {/* Replace/Change Info */}

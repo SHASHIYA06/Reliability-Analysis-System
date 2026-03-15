@@ -1,6 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { ClipboardCheck, Plus, Search, Download, Eye, X, ChevronDown, ChevronUp } from "lucide-react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function dbToRecord(r: any): EirRecord {
+  return {
+    ...r,
+    distribution: r.distributionJson ? (() => { try { return JSON.parse(r.distributionJson); } catch { return { ...EMPTY_DIST }; } })() : { ...EMPTY_DIST },
+  };
+}
+
+function recordToDb(r: EirRecord): any {
+  const { distribution, ...rest } = r;
+  return { ...rest, distributionJson: JSON.stringify(distribution) };
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -314,12 +328,27 @@ function EirForm({ onSave, onClose, count }: { onSave: (r: EirRecord) => void; o
 }
 
 export default function EIRPage() {
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [viewRecord, setViewRecord] = useState<EirRecord | null>(null);
   const [search, setSearch] = useState("");
   const [filterTrain, setFilterTrain] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [records, setRecords] = useState<EirRecord[]>(MOCK);
+  const [records, setRecords] = useState<EirRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRecords = useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE}/api/eir`);
+      if (res.ok) {
+        const data = await res.json();
+        setRecords(data.map(dbToRecord));
+      }
+    } catch {}
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchRecords(); }, [fetchRecords]);
 
   const filtered = records.filter(r => {
     if (filterTrain && r.trainSet !== filterTrain) return false;
@@ -437,7 +466,11 @@ export default function EIRPage() {
         </div>
       </Card>
 
-      {showForm && <EirForm count={records.length} onSave={r => setRecords(prev => [r, ...prev])} onClose={() => setShowForm(false)} />}
+      {showForm && <EirForm count={records.length} onSave={r => {
+        const dbRecord = recordToDb({ ...r, id: `EIR-${Date.now()}` });
+        fetch(`${BASE}/api/eir`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dbRecord) })
+          .then(() => fetchRecords()).catch(console.error);
+      }} onClose={() => setShowForm(false)} />}
       {viewRecord && <ViewModal record={viewRecord} onClose={() => setViewRecord(null)} />}
     </div>
   );

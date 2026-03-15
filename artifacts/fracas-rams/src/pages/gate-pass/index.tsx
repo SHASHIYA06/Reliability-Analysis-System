@@ -1,4 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function dbToGP(r: any): GatePass {
+  const st = r.status || "OPEN";
+  const status = st === "OPEN" ? "Open" : st === "CLOSED" ? "Closed" : st;
+  return { id: r.id, date: r.gpDate || "", type: r.gpType || "Out", trainNo: r.trainNo || "", carNo: r.car || r.carNo || "", itemDescription: r.itemDescription || "", partNo: r.partNo || "", srNoFaulty: r.srNo || r.srNoFaulty || "", destination: r.destination || "", reason: r.reason || "", issuedBy: r.issuedBy || "", status, ncrRef: r.ncrRef || "", returnDate: r.returnDate || "", remarks: r.remarks || "" };
+}
+
+function gpToDb(gp: GatePass): any {
+  const status = gp.status === "Open" ? "OPEN" : gp.status === "Closed" ? "CLOSED" : gp.status;
+  return { id: gp.id, gpNumber: gp.id, gpDate: gp.date, gpType: gp.type, trainNo: gp.trainNo, car: gp.carNo, itemDescription: gp.itemDescription, partNo: gp.partNo, srNo: gp.srNoFaulty, destination: gp.destination, reason: gp.reason, issuedBy: gp.issuedBy, status, ncrRef: gp.ncrRef, returnDate: gp.returnDate, remarks: gp.remarks, handedOver: gp.issuedBy, receiver: "" };
+}
 import { format } from "date-fns";
 import {
   ArrowRightLeft, Plus, Search, Download, Printer, CheckCircle, Edit2, Trash2, MoreVertical, Eye,
@@ -43,7 +56,12 @@ export default function GatePassPage() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [viewGP, setViewGP] = useState<GatePass | null>(null);
-  const [records, setRecords] = useState<GatePass[]>(INITIAL_GP);
+  const [records, setRecords] = useState<GatePass[]>([]);
+
+  const fetchRecords = useCallback(async () => {
+    try { const res = await fetch(`${BASE}/api/gate-pass`); if (res.ok) { const data = await res.json(); setRecords(data.map(dbToGP)); } } catch {}
+  }, []);
+  useEffect(() => { fetchRecords(); }, [fetchRecords]);
   const [form, setForm] = useState<typeof BLANK_FORM>({ ...BLANK_FORM });
 
   const filtered = records.filter(r => {
@@ -63,29 +81,34 @@ export default function GatePassPage() {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.itemDescription || !form.trainNo || !form.issuedBy) {
       toast({ title: "Required Fields Missing", description: "Item Description, Train No., and Issued By are required.", variant: "destructive" }); return;
     }
     if (editId) {
-      setRecords(prev => prev.map(r => r.id === editId ? { ...r, ...form } : r));
+      const body = gpToDb({ id: editId, ...form, status: records.find(r => r.id === editId)?.status || "Open", returnDate: records.find(r => r.id === editId)?.returnDate || "" });
+      await fetch(`${BASE}/api/gate-pass/${editId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       toast({ title: "Gate Pass Updated", description: `${editId} updated successfully.` });
     } else {
       const n = `GP-${new Date().getFullYear()}-${String(records.length + 1).padStart(3, "0")}`;
-      setRecords(prev => [{ id: n, ...form, status: "Open", returnDate: "" }, ...prev]);
+      const body = gpToDb({ id: n, ...form, status: "Open", returnDate: "" });
+      await fetch(`${BASE}/api/gate-pass`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       toast({ title: "Gate Pass Created", description: `${n} created successfully.` });
     }
     setShowForm(false);
+    fetchRecords();
   };
 
-  const handleClose = (gp: GatePass) => {
-    setRecords(prev => prev.map(r => r.id === gp.id ? { ...r, status: "Closed", returnDate: format(new Date(), "yyyy-MM-dd") } : r));
+  const handleClose = async (gp: GatePass) => {
+    await fetch(`${BASE}/api/gate-pass/${gp.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(gpToDb({ ...gp, status: "Closed", returnDate: format(new Date(), "yyyy-MM-dd") })) });
     toast({ title: "Gate Pass Closed", description: `${gp.id} marked as closed.` });
+    fetchRecords();
   };
 
-  const handleDelete = (gp: GatePass) => {
-    setRecords(prev => prev.filter(r => r.id !== gp.id));
+  const handleDelete = async (gp: GatePass) => {
+    await fetch(`${BASE}/api/gate-pass/${gp.id}`, { method: "DELETE" });
     toast({ title: "Gate Pass Deleted", description: `${gp.id} deleted.` });
+    fetchRecords();
   };
 
   const handlePrint = (gp: GatePass) => {

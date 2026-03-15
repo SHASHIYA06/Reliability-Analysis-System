@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -97,8 +98,35 @@ function QuickActionBtn({ icon: Icon, label, href, color }: any) {
   );
 }
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 export default function Dashboard() {
   const { data: summary, isLoading, error } = useGetSummaryReport();
+  const [kpi, setKpi] = useState({ dlpCritical: 1, openNCR: 4, openEIR: 3, openRSOI: 2, pendingGP: 2, lowStock: 1 });
+
+  useEffect(() => {
+    async function fetchKpis() {
+      try {
+        const [dlpRes, eirRes, rsoiRes, gpRes, invRes, ncrRes] = await Promise.allSettled([
+          fetch(`${BASE}/api/dlp/stats/counts`).then(r => r.json()),
+          fetch(`${BASE}/api/eir/stats/counts`).then(r => r.json()),
+          fetch(`${BASE}/api/rsoi/stats/counts`).then(r => r.json()),
+          fetch(`${BASE}/api/gate-pass/stats/counts`).then(r => r.json()),
+          fetch(`${BASE}/api/inventory/stats/low-stock`).then(r => r.json()),
+          fetch(`${BASE}/api/ncr`).then(r => r.json()),
+        ]);
+        setKpi({
+          dlpCritical: dlpRes.status === "fulfilled" ? ((dlpRes.value.expired ?? 0) + (dlpRes.value.critical ?? 0)) : 1,
+          openEIR: eirRes.status === "fulfilled" ? (eirRes.value.open ?? 3) : 3,
+          openRSOI: rsoiRes.status === "fulfilled" ? (rsoiRes.value.open ?? 2) : 2,
+          pendingGP: gpRes.status === "fulfilled" ? (gpRes.value.open ?? 2) : 2,
+          lowStock: invRes.status === "fulfilled" ? (invRes.value.lowStock ?? 1) : 1,
+          openNCR: ncrRes.status === "fulfilled" ? (ncrRes.value as any[]).filter((r: any) => r.status !== "CLOSED").length : 4,
+        });
+      } catch {}
+    }
+    fetchKpis();
+  }, []);
 
   if (isLoading) {
     return (
@@ -152,12 +180,7 @@ export default function Dashboard() {
   const mdbfMeets6 = mdbf > 0 && mdbf >= MDBF_6MO;
   const mdbfMeets12 = mdbf > 0 && mdbf >= MDBF_12MO;
 
-  const dlpCritical = 1;
-  const openNCR = 4;
-  const openEIR = 3;
-  const openRSOI = 2;
-  const pendingGP = 2;
-  const lowStock = 1;
+  const { dlpCritical, openNCR, openEIR, openRSOI, pendingGP, lowStock } = kpi;
 
   return (
     <div className="space-y-5">

@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 import { format, differenceInDays, parseISO } from "date-fns";
 import {
   ShieldAlert, Plus, Search, Download, Bell, BellOff, AlertTriangle,
@@ -72,7 +74,15 @@ export default function DLPPage() {
   const [filterSystem, setFilterSystem] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [items, setItems] = useState<DLPItem[]>(INITIAL_DLP);
+  const [items, setItems] = useState<DLPItem[]>([]);
+
+  const fetchItems = useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE}/api/dlp`);
+      if (res.ok) setItems(await res.json());
+    } catch {}
+  }, []);
+  useEffect(() => { fetchItems(); }, [fetchItems]);
   const [alarmEnabled, setAlarmEnabled] = useState(true);
   const [form, setForm] = useState<typeof BLANK_FORM>({ ...BLANK_FORM });
   const [activeTab, setActiveTab] = useState<"list" | "bySystem" | "byVendor">("list");
@@ -112,24 +122,26 @@ export default function DLPPage() {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.itemDescription || !form.partNumber) {
       toast({ title: "Required Fields Missing", description: "Please fill Description and Part Number.", variant: "destructive" }); return;
     }
     if (editId) {
-      setItems(prev => prev.map(i => i.id === editId ? { ...i, ...form, qty: Number(form.qty) || 0 } : i));
+      await fetch(`${BASE}/api/dlp/${editId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, qty: Number(form.qty) || 0 }) });
       toast({ title: "DLP Item Updated", description: `${editId} updated successfully.` });
     } else {
       const n = `DLP-${String(items.length + 1).padStart(3, "0")}`;
-      setItems(prev => [...prev, { id: n, ...form, qty: Number(form.qty) || 0, ncrCount: 0, status: "Active" }]);
+      await fetch(`${BASE}/api/dlp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n, ...form, qty: Number(form.qty) || 0, ncrCount: 0, status: "Active" }) });
       toast({ title: "DLP Item Added", description: `${n} added to DLP register.` });
     }
     setShowForm(false);
+    fetchItems();
   };
 
-  const handleDelete = (item: DLPItem) => {
-    setItems(prev => prev.filter(x => x.id !== item.id));
+  const handleDelete = async (item: DLPItem) => {
+    await fetch(`${BASE}/api/dlp/${item.id}`, { method: "DELETE" });
     toast({ title: "DLP Item Removed", description: `${item.id} removed from register.` });
+    fetchItems();
   };
 
   const exportCSV = () => {

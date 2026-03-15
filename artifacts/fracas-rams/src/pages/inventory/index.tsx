@@ -1,4 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 import { format } from "date-fns";
 import {
   Package, Plus, Search, Download, AlertCircle, TrendingDown, Upload,
@@ -65,7 +67,12 @@ export default function InventoryPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [items, setItems] = useState<InvItem[]>(INITIAL_INV);
+  const [items, setItems] = useState<InvItem[]>([]);
+
+  const fetchItems = useCallback(async () => {
+    try { const res = await fetch(`${BASE}/api/inventory`); if (res.ok) setItems(await res.json()); } catch {}
+  }, []);
+  useEffect(() => { fetchItems(); }, [fetchItems]);
   const [form, setForm] = useState<typeof BLANK_FORM>({ ...BLANK_FORM });
   const [showAdjust, setShowAdjust] = useState<InvItem | null>(null);
   const [adjustQty, setAdjustQty] = useState("");
@@ -92,37 +99,40 @@ export default function InventoryPage() {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.partNo || !form.description) {
       toast({ title: "Required Fields Missing", description: "Part No. and Description are required.", variant: "destructive" }); return;
     }
+    const payload = { ...form, qty: Number(form.qty) || 0, minQty: Number(form.minQty) || 0, unitCost: Number(form.unitCost) || 0 };
     if (editId) {
-      setItems(prev => prev.map(i => i.id === editId ? { ...i, ...form, qty: Number(form.qty) || 0, minQty: Number(form.minQty) || 0, unitCost: Number(form.unitCost) || 0 } : i));
+      await fetch(`${BASE}/api/inventory/${editId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       toast({ title: "Item Updated", description: `${editId} updated successfully.` });
     } else {
       const n = `INV-${String(items.length + 1).padStart(3, "0")}`;
-      setItems(prev => [...prev, { id: n, ...form, qty: Number(form.qty) || 0, minQty: Number(form.minQty) || 0, unitCost: Number(form.unitCost) || 0, lastReceived: format(new Date(), "yyyy-MM-dd") }]);
+      await fetch(`${BASE}/api/inventory`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n, ...payload, lastReceived: format(new Date(), "yyyy-MM-dd") }) });
       toast({ title: "Item Added to Store", description: `${n} — ${form.description} added.` });
     }
     setShowForm(false);
+    fetchItems();
   };
 
-  const handleDelete = (item: InvItem) => {
-    setItems(prev => prev.filter(x => x.id !== item.id));
+  const handleDelete = async (item: InvItem) => {
+    await fetch(`${BASE}/api/inventory/${item.id}`, { method: "DELETE" });
     toast({ title: "Item Removed", description: `${item.partNo} removed from inventory.` });
+    fetchItems();
   };
 
-  const confirmAdjust = () => {
+  const confirmAdjust = async () => {
     if (!showAdjust || !adjustQty) { toast({ title: "Enter quantity", variant: "destructive" }); return; }
     const delta = Number(adjustQty);
     if (isNaN(delta) || delta <= 0) { toast({ title: "Invalid quantity", variant: "destructive" }); return; }
-    setItems(prev => prev.map(i => {
-      if (i.id !== showAdjust.id) return i;
-      const newQty = adjustType === "receive" ? i.qty + delta : Math.max(0, i.qty - delta);
-      return { ...i, qty: newQty, lastReceived: adjustType === "receive" ? format(new Date(), "yyyy-MM-dd") : i.lastReceived };
-    }));
-    toast({ title: `Stock ${adjustType === "receive" ? "Received" : "Issued"}`, description: `${delta} ${showAdjust.unit} ${adjustType === "receive" ? "added to" : "removed from"} ${showAdjust.partNo}.` });
+    const item = showAdjust;
+    const newQty = adjustType === "receive" ? item.qty + delta : Math.max(0, item.qty - delta);
+    const newLastReceived = adjustType === "receive" ? format(new Date(), "yyyy-MM-dd") : item.lastReceived;
+    await fetch(`${BASE}/api/inventory/${item.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ qty: newQty, lastReceived: newLastReceived }) });
+    toast({ title: `Stock ${adjustType === "receive" ? "Received" : "Issued"}`, description: `${delta} ${item.unit} ${adjustType === "receive" ? "added to" : "removed from"} ${item.partNo}.` });
     setShowAdjust(null);
+    fetchItems();
   };
 
   const exportCSV = () => {

@@ -1,4 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function dbToRsoi(r: any): RsoiRecord {
+  return { ...r, jobCards: r.jobCardsJson ? (() => { try { return JSON.parse(r.jobCardsJson); } catch { return []; } })() : [] };
+}
 import { format } from "date-fns";
 import { FileCheck, Plus, Search, Download, Eye, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -318,11 +324,22 @@ function RsoiForm({ onSave, onClose, count }: { onSave: (r: RsoiRecord) => void;
 }
 
 export default function RSOIPage() {
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [viewRecord, setViewRecord] = useState<RsoiRecord | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [records, setRecords] = useState<RsoiRecord[]>(MOCK);
+  const [records, setRecords] = useState<RsoiRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRecords = useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE}/api/rsoi`);
+      if (res.ok) { const data = await res.json(); setRecords(data.map(dbToRsoi)); }
+    } catch {} finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchRecords(); }, [fetchRecords]);
 
   const filtered = records.filter(r => {
     if (filterStatus && r.status !== filterStatus) return false;
@@ -424,7 +441,12 @@ export default function RSOIPage() {
         </table>
       </div>
 
-      {showForm && <RsoiForm count={records.length} onSave={r => setRecords(prev => [r, ...prev])} onClose={() => setShowForm(false)} />}
+      {showForm && <RsoiForm count={records.length} onSave={r => {
+        const { jobCards, ...rest } = r;
+        const body = { ...rest, id: `RSOI-${Date.now()}`, jobCardsJson: JSON.stringify(jobCards) };
+        fetch(`${BASE}/api/rsoi`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+          .then(() => fetchRecords()).catch(console.error);
+      }} onClose={() => setShowForm(false)} />}
       {viewRecord && <ViewModal record={viewRecord} onClose={() => setViewRecord(null)} />}
     </div>
   );
