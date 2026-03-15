@@ -464,49 +464,49 @@ export default function JobCards() {
 
           {showFilters && (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-              <Select value={filterDepot} onValueChange={v => { setFilterDepot(v); setPage(1); }}>
+              <Select value={filterDepot || "__all__"} onValueChange={v => { setFilterDepot(v === "__all__" ? "" : v); setPage(1); }}>
                 <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="All Depots" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Depots</SelectItem>
+                  <SelectItem value="__all__">All Depots</SelectItem>
                   {DEPOTS.map(d => <SelectItem key={d.value} value={d.value}>{d.value}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={filterTrainSet} onValueChange={v => { setFilterTrainSet(v); setPage(1); }}>
+              <Select value={filterTrainSet || "__all__"} onValueChange={v => { setFilterTrainSet(v === "__all__" ? "" : v); setPage(1); }}>
                 <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="All Trains" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Trains</SelectItem>
+                  <SelectItem value="__all__">All Trains</SelectItem>
                   {TRAIN_SETS.map(ts => <SelectItem key={ts} value={ts}>{ts}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={filterSystem} onValueChange={v => { setFilterSystem(v); setPage(1); }}>
+              <Select value={filterSystem || "__all__"} onValueChange={v => { setFilterSystem(v === "__all__" ? "" : v); setPage(1); }}>
                 <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="All Systems" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Systems</SelectItem>
+                  <SelectItem value="__all__">All Systems</SelectItem>
                   {SYSTEM_TAXONOMY.map(s => <SelectItem key={s.code} value={s.code}>{s.code}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={filterOrderType} onValueChange={v => { setFilterOrderType(v); setPage(1); }}>
+              <Select value={filterOrderType || "__all__"} onValueChange={v => { setFilterOrderType(v === "__all__" ? "" : v); setPage(1); }}>
                 <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="All Orders" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Orders</SelectItem>
+                  <SelectItem value="__all__">All Orders</SelectItem>
                   <SelectItem value="CM">CM — Corrective</SelectItem>
                   <SelectItem value="PM">PM — Preventive</SelectItem>
                   <SelectItem value="OPM">OPM — Other</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setPage(1); }}>
+              <Select value={filterStatus || "__all__"} onValueChange={v => { setFilterStatus(v === "__all__" ? "" : v); setPage(1); }}>
                 <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="All Status" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="__all__">All Status</SelectItem>
                   <SelectItem value="open">Open</SelectItem>
                   <SelectItem value="in-progress">In Progress</SelectItem>
                   <SelectItem value="closed">Closed</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterClass} onValueChange={v => { setFilterClass(v); setPage(1); }}>
+              <Select value={filterClass || "__all__"} onValueChange={v => { setFilterClass(v === "__all__" ? "" : v); setPage(1); }}>
                 <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="All Classes" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Classes</SelectItem>
+                  <SelectItem value="__all__">All Classes</SelectItem>
                   <SelectItem value="relevant">Relevant</SelectItem>
                   <SelectItem value="non-relevant">Non-Relevant</SelectItem>
                   <SelectItem value="service-failure">Service Failure</SelectItem>

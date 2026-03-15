@@ -388,26 +388,26 @@ export default function NCR() {
           </div>
           {showFilters && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-in fade-in duration-200">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={filterStatus || "__all__"} onValueChange={v => setFilterStatus(v === "__all__" ? "" : v)}>
                 <SelectTrigger className="bg-background text-xs h-9"><SelectValue placeholder="All Status" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="__all__">All Status</SelectItem>
                   <SelectItem value="OPEN">Open</SelectItem>
                   <SelectItem value="CLOSED">Closed</SelectItem>
                   <SelectItem value="CANCELED">Canceled</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterSubSystem} onValueChange={setFilterSubSystem}>
+              <Select value={filterSubSystem || "__all__"} onValueChange={v => setFilterSubSystem(v === "__all__" ? "" : v)}>
                 <SelectTrigger className="bg-background text-xs h-9"><SelectValue placeholder="All Sub-Systems" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Sub-Systems</SelectItem>
+                  <SelectItem value="__all__">All Sub-Systems</SelectItem>
                   {subSystems.slice(0, 30).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={filterTrainNo} onValueChange={setFilterTrainNo}>
+              <Select value={filterTrainNo || "__all__"} onValueChange={v => setFilterTrainNo(v === "__all__" ? "" : v)}>
                 <SelectTrigger className="bg-background text-xs h-9"><SelectValue placeholder="All Trains" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Trains</SelectItem>
+                  <SelectItem value="__all__">All Trains</SelectItem>
                   {trainNos.slice(0, 20).map(t => <SelectItem key={t} value={t}>TS#{String(t).padStart(2,"0")}</SelectItem>)}
                 </SelectContent>
               </Select>
