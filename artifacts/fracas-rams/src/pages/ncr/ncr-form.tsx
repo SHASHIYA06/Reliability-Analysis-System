@@ -167,12 +167,17 @@ export function NcrForm({ isOpen, onClose, initialData, onSuccess }: NcrFormProp
     <FormField control={form.control} name={name} render={({ field }) => (
       <FormItem>
         <FormLabel>{label}</FormLabel>
-        <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <Select
+          onValueChange={v => field.onChange(v === "__none__" ? "" : v)}
+          value={field.value ? field.value : "__none__"}>
           <FormControl>
             <SelectTrigger className="bg-background h-9"><SelectValue placeholder={placeholder} /></SelectTrigger>
           </FormControl>
           <SelectContent>
-            {options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+            {options.map(o => {
+              const itemVal = o.value === "" ? "__none__" : o.value;
+              return <SelectItem key={itemVal} value={itemVal}>{o.label}</SelectItem>;
+            })}
           </SelectContent>
         </Select>
         <FormMessage />
