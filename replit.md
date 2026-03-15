@@ -172,6 +172,42 @@ scripts/
 
 Note: MDBF uses CM orderType as service-failure proxy since raw data lacks explicit service-failure classification.
 
+## Deployment Configuration
+
+- **Vercel** (frontend): `vercel.json` at root — build from `artifacts/fracas-rams/dist/public`
+- **Render** (backend): `render.yaml` at root — build to `artifacts/api-server/dist/index.cjs`
+- **Neon** (database): Serverless PostgreSQL via `DATABASE_URL` env var
+- **GitHub**: `https://github.com/SHASHIYA06/Reliability-Analysis-System.git`
+- Full details in `DEPLOYMENT.md`
+
+## Mobile Responsiveness
+
+Layout component (`artifacts/fracas-rams/src/components/layout.tsx`) updated for mobile:
+- Sidebar hidden by default on mobile, slides in from left on hamburger tap
+- Dark backdrop overlay when mobile sidebar is open
+- Responsive header (search hidden on mobile, compact user info)
+- `p-4 md:p-6` padding pattern throughout
+
+## API Base URL Pattern
+
+All frontend pages use `import { API_BASE as BASE } from "@/lib/api-base"` (at `src/lib/api-base.ts`).
+In production, set `VITE_API_URL` env var to point to the Render backend URL.
+In development (Replit), falls back to `import.meta.env.BASE_URL` for relative API calls.
+
+## Environment Variables
+
+### Frontend (Vercel)
+- `VITE_API_URL` — Render backend URL (e.g. `https://fracas-rams-api.onrender.com`)
+- `BASE_PATH` — always `/`
+- `NODE_ENV` — `production`
+
+### Backend (Render)
+- `DATABASE_URL` — Neon PostgreSQL connection string
+- `PORT` — `10000`
+- `ALLOWED_ORIGINS` — comma-separated frontend URLs (Vercel URL)
+- `AI_INTEGRATIONS_GEMINI_API_KEY` — Google AI Studio API key
+- `AI_INTEGRATIONS_GEMINI_BASE_URL` — `https://generativelanguage.googleapis.com/v1beta`
+
 ## Important Commands
 
 ```bash
@@ -184,6 +220,14 @@ pnpm --filter @workspace/db run push-force
 # Start servers
 pnpm --filter @workspace/api-server run dev  # port 8080
 pnpm --filter @workspace/fracas-rams run dev  # port 21360
+
+# Production build test
+NODE_ENV=production BASE_PATH=/ pnpm --filter @workspace/fracas-rams run build
+pnpm --filter @workspace/api-server run build
+
+# Push to GitHub (run in Replit Shell)
+git remote add github https://github.com/SHASHIYA06/Reliability-Analysis-System.git
+git push github master
 ```
 
 ## API Endpoints

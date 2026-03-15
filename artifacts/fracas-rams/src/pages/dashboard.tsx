@@ -30,6 +30,7 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { API_BASE as BASE } from "@/lib/api-base";
 
 const CHART_COLORS = [
   "hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))",
@@ -97,8 +98,6 @@ function QuickActionBtn({ icon: Icon, label, href, color }: any) {
     </Link>
   );
 }
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export default function Dashboard() {
   const { data: summary, isLoading, error } = useGetSummaryReport();

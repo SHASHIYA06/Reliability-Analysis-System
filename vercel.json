@@ -1,0 +1,10 @@
+{
+  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm --filter @workspace/fracas-rams run build",
+  "outputDirectory": "artifacts/fracas-rams/dist/public",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "framework": null,
+  "env": {
+    "NODE_ENV": "production",
+    "BASE_PATH": "/"
+  }
+}

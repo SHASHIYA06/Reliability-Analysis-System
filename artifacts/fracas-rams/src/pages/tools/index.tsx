@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_BASE as BASE } from "@/lib/api-base";
 
 function dbToTool(r: any): Tool {
   return { id: r.id, name: r.toolName || "", toolNo: r.toolNumber || r.toolId || "", category: r.category || "", location: r.location || "", condition: r.condition || "Good", calibrationDue: r.calibrationDue || "", assignedTo: r.issuedTo || "", qty: r.qty || 1, remarks: r.remarks || "" };

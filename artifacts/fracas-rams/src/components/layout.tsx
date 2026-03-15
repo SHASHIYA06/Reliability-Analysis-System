@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
@@ -12,12 +12,12 @@ import {
   Menu,
   ClipboardList,
   LogOut,
-  ChevronDown,
   ClipboardCheck,
   FileCheck,
   ShieldAlert,
   ArrowRightLeft,
   Package,
+  X,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -85,7 +85,8 @@ function BEMLLogo() {
 
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const roleLabelMap: Record<string, string> = {
     admin: "Admin",
@@ -95,12 +96,33 @@ export function Layout({ children }: LayoutProps) {
   };
   const roleLabel = roleLabelMap[user?.role || ""] || "";
 
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
+      {/* Mobile overlay backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r border-border/50 bg-card/50 flex flex-col backdrop-blur-xl relative z-10">
-        <div className="h-16 flex items-center px-4 border-b border-border/50">
+      <aside
+        className={cn(
+          "fixed md:relative inset-y-0 left-0 z-50 w-64 flex-shrink-0 border-r border-border/50 bg-card/95 flex flex-col backdrop-blur-xl transition-transform duration-300 ease-in-out",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        <div className="h-16 flex items-center justify-between px-4 border-b border-border/50 flex-shrink-0">
           <BEMLLogo />
+          <button
+            className="md:hidden text-muted-foreground hover:text-foreground p-1"
+            onClick={closeSidebar}
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
         <div className="p-3 flex-1 overflow-y-auto space-y-4">
@@ -113,7 +135,7 @@ export function Layout({ children }: LayoutProps) {
                 {section.items.map((item) => {
                   const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
                   return (
-                    <Link key={item.href} href={item.href} className="block">
+                    <Link key={item.href} href={item.href} className="block" onClick={closeSidebar}>
                       <div className={cn(
                         "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                         isActive
@@ -131,7 +153,7 @@ export function Layout({ children }: LayoutProps) {
           ))}
         </div>
         
-        <div className="p-4 border-t border-border/50 space-y-1">
+        <div className="p-4 border-t border-border/50 space-y-1 flex-shrink-0">
           <div className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-lg hover:bg-white/5">
             <Settings className="w-5 h-5 opacity-70 flex-shrink-0" />
             System Settings
@@ -148,22 +170,27 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 flex-shrink-0 border-b border-border/50 bg-background/80 backdrop-blur-xl flex items-center justify-between px-6 z-10 sticky top-0">
-          <div className="flex items-center gap-4 flex-1">
-            <Button variant="ghost" size="icon" className="md:hidden">
+        <header className="h-16 flex-shrink-0 border-b border-border/50 bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 z-10 sticky top-0">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden flex-shrink-0"
+              onClick={() => setSidebarOpen(true)}
+            >
               <Menu className="w-5 h-5" />
             </Button>
-            <div className="relative w-64 hidden md:block">
+            <div className="relative w-48 hidden sm:block">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input 
-                placeholder="Search job cards, NCR, parts..." 
-                className="pl-9 bg-card/50 border-border/50 focus-visible:ring-primary/50"
+                placeholder="Search job cards, NCR..." 
+                className="pl-9 bg-card/50 border-border/50 focus-visible:ring-primary/50 text-sm"
               />
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+            <div className="hidden sm:flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               <span className="text-xs text-muted-foreground font-mono">SYS.ONLINE</span>
             </div>
@@ -173,11 +200,11 @@ export function Layout({ children }: LayoutProps) {
             </Button>
             {user && (
               <div className="flex items-center gap-2 cursor-pointer group">
-                <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary">
+                <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
                   {user.initials}
                 </div>
                 <div className="hidden sm:block text-xs leading-tight">
-                  <div className="font-medium text-foreground truncate max-w-[120px]">{user.name.split(" ")[0]} {user.name.split(" ")[1]?.[0]}.</div>
+                  <div className="font-medium text-foreground truncate max-w-[100px]">{user.name.split(" ")[0]} {user.name.split(" ")[1]?.[0]}.</div>
                   <div className="text-muted-foreground">{roleLabel}</div>
                 </div>
               </div>
@@ -185,7 +212,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-6 relative">
+        <main className="flex-1 overflow-auto p-4 md:p-6 relative">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
           <div className="relative z-10 h-full">
             {children}

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { API_BASE as BASE } from "@/lib/api-base";
 import { format, isValid } from "date-fns";
 import { Plus, Search, Edit, Trash2, ClipboardList, Download, Filter, X, Upload, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,8 +42,6 @@ type Ncr = {
   ncrClosedByDoc?: string;
   investigationReportDate?: string;
 };
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 async function fetchNcr(): Promise<Ncr[]> {
   const res = await fetch(`${BASE}/api/ncr?limit=2000`);

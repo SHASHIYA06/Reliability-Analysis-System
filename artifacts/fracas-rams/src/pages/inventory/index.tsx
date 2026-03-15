@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_BASE as BASE } from "@/lib/api-base";
 import { format } from "date-fns";
 import {
   Package, Plus, Search, Download, AlertCircle, TrendingDown, Upload,

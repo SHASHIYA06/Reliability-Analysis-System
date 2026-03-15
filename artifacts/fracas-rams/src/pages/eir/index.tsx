@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { ClipboardCheck, Plus, Search, Download, Eye, X, ChevronDown, ChevronUp } from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_BASE as BASE } from "@/lib/api-base";
 
 function dbToRecord(r: any): EirRecord {
   return {

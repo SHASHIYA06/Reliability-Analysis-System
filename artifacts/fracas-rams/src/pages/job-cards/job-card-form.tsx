@@ -25,7 +25,7 @@ import {
 } from "@/lib/taxonomy";
 import { useAuth } from "@/contexts/auth-context";
 
-const BASE_API = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_BASE as BASE_API } from "@/lib/api-base";
 
 const YES_NO = [
   { value: "yes", label: "Yes" },

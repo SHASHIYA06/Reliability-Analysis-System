@@ -12,7 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_BASE as BASE } from "@/lib/api-base";
 
 const TRAIN_SETS = ["01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17"];
 const CAR_OPTIONS = ["DM-1","T-1","M-1","M-2","T-2","DM-2","All coaches"];

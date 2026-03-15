@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_BASE as BASE } from "@/lib/api-base";
 
 function dbToGP(r: any): GatePass {
   const st = r.status || "OPEN";

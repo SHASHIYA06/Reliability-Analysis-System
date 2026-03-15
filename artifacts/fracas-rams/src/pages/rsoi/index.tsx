@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_BASE as BASE } from "@/lib/api-base";
 
 function dbToRsoi(r: any): RsoiRecord {
   return { ...r, jobCards: r.jobCardsJson ? (() => { try { return JSON.parse(r.jobCardsJson); } catch { return []; } })() : [] };
