@@ -41,6 +41,7 @@ Users:
 - `BEML/OFFICER/002` — SHILPA SAHU (Officer, pw: SHILPA@1234)
 - `BEML/OFFICER/003` — SHIRSHENDU MAJUMDAR (Officer, pw: SHIRSHENDU@1234)
 - `BEML/OFFICER/004` — SUNIL KUMAR RAJAN (Officer, pw: SUNIL@1234)
+- `BEML/OFFICER/005` — SOORAJ SURESH (Officer, pw: SOORAJ@1234)
 
 ## Real Data
 
@@ -91,6 +92,49 @@ Re-import command: `node scripts/import-beml-jobcards.mjs`
 - Train fleet table with status
 - Fleet distance tracking (manually entered KM records)
 - KMRC RS-3R specific train numbering (MR601–MR614 → TS01–TS14)
+
+### EIR (Engineering Incident Report)
+- Full EIR format: EIR No., Applicable To (RS3R), Depot (MNSD), Status (OPEN/IN PROGRESS/CLOSED)
+- Fields: Train Set, Car, Equipment, Event Time, Temperature, Location, Incident Date/Details
+- Actions: Depot/Main Line/Further; Distribution checkboxes; System Hierarchy
+- Other Details: Repercussion, History, Investigation Cause, Concern, Conclusion
+- Full view modal; export CSV; action menus (Edit/View/Delete)
+
+### RSOI (Rolling Stock Open Issues)
+- RSOI No., Failure Detected JC, Status (OPEN/IN PROGRESS/CLOSE)
+- Fields: datetime, Investigation Report Received/O&M Sent checkboxes, Type (ELEC/MECH/S&T)
+- Refs, System Hierarchy, Comments
+- Cyclic Check Related Job Cards table with inline add-row feature
+- Action menus (View/Edit/Delete)
+
+### DLP Items Register
+- Defect Liability Period tracking with automatic alarm (expired/critical/warning/ok)
+- Fields: Item, Part No., System, Subsystem, Train, Qty, DLP Expiry, Vendor, NCR Count
+- Alarm system: auto-toast on load for expired items; Alarm ON/OFF toggle
+- **3 Views**: All Items (with filters), By System (grouped), By Vendor (grouped)
+- **Import CSV**, Export CSV, Edit item, Delete item actions
+- DLP period progress bar; alarm-level color coding in table rows
+
+### Store Inventory
+- Full spare parts register: Part No., System, Category, Qty, Min Qty, Location, Vendor, Unit Cost
+- Status: OK / Low / Critical (auto-determined from qty vs minQty)
+- **Import CSV**, Export CSV, **Print Store Report** (A4 printable with signature blocks)
+- **Edit Item**, **Adjust Stock** (Issue/Receive transactions), Delete item
+- Action dropdown menus per row
+- Low stock alert banner; inventory value calculation (₹)
+
+### Tools Management
+- Full tool register: Tool ID, Name, Tool No., Category, Location, Condition, Calibration Due
+- Calibration overdue/due-soon alert banner
+- **Import CSV**, Export CSV, **Edit Tool**, **Delete Tool**
+- **Issue Tool** / **Return Tool** inline workflow (assigns tool to user)
+- Action dropdown menus; condition filter; availability tracking
+
+### Gate Pass Management
+- GP No., Date, Type (Out/In), Train, Car, Item Description, Part No., Sr. No., Destination
+- Status management: Open → Closed (with return date)
+- **View Details** modal; **Edit Gate Pass**; **Mark Closed**; **Print** (A5 landscape format)
+- Export CSV; action dropdown menus per row
 
 ## Key Files
 

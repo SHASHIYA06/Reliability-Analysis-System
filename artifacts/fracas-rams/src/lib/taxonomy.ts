@@ -399,6 +399,7 @@ export const BEML_USERS = [
   { id: "BEML/OFFICER/002",        name: "SHILPA SAHU",             password: "SHILPA@1234",   role: "officer",    initials: "SS" },
   { id: "BEML/OFFICER/003",        name: "SHIRSHENDU MAJUMDAR",     password: "SHIRSHENDU@1234",role:"officer",    initials: "SM" },
   { id: "BEML/OFFICER/004",        name: "SUNIL KUMAR RAJAN",       password: "SUNIL@1234",    role: "officer",    initials: "SR" },
+  { id: "BEML/OFFICER/005",        name: "SOORAJ SURESH",            password: "SOORAJ@1234",   role: "officer",    initials: "SS" },
 ];
 
 export const SYSTEMS: string[] = SYSTEM_TAXONOMY.map(s => s.name);

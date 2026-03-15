@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FRACAS &amp; RAMS Management System - Technical Documentation</title>
+
+  <!-- Essential CDN Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: 'hsl(210, 75%, 95%)',
+              100: 'hsl(210, 75%, 85%)',
+              200: 'hsl(210, 75%, 75%)',
+              300: 'hsl(210, 75%, 65%)',
+              400: 'hsl(210, 75%, 55%)',
+              500: 'hsl(210, 75%, 40%)',
+              600: 'hsl(210, 75%, 35%)',
+              700: 'hsl(210, 75%, 25%)',
+              800: 'hsl(210, 75%, 15%)',
+              900: 'hsl(210, 75%, 10%)'
+            },
+            accent: {
+              50: 'hsl(270, 65%, 95%)',
+              100: 'hsl(270, 65%, 85%)',
+              200: 'hsl(270, 65%, 75%)',
+              300: 'hsl(270, 65%, 65%)',
+              400: 'hsl(270, 65%, 60%)',
+              500: 'hsl(270, 65%, 55%)',
+              600: 'hsl(270, 65%, 50%)',
+              700: 'hsl(270, 65%, 40%)',
+              800: 'hsl(270, 65%, 30%)',
+              900: 'hsl(270, 65%, 20%)'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+
+  <!-- Preline UI Components -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/preline@2.0.3/dist/preline.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/preline@2.0.3/dist/preline.js"></script>
+
+  <!-- Micro-interactions & Custom Styles -->
+  <style>
+    html { scroll-behavior: smooth; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      html { scroll-behavior: auto; }
+    }
+
+    .btn-interactive {
+      transition: all 0.2s ease-out;
+    }
+    
+    .btn-interactive:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .btn-interactive:active {
+      transform: scale(0.95);
+    }
+
+    .card-interactive {
+      transition: all 0.3s ease-out;
+      border: 1px solid transparent;
+      --border-lightness: 40%;
+    }
+
+    .dark .card-interactive {
+      --border-lightness: 60%;
+    }
+
+    .card-interactive:hover {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      filter: brightness(0.98);
+    }
+    
+    /* Primary colored cards */
+    .card-interactive[class*="primary"]:hover,
+    .card-interactive[class*="white"]:hover,
+    .card-interactive[class*="gray-"]:hover {
+      border-color: hsl(210, 75%, var(--border-lightness));
+    }
+    
+    /* Accent colored cards */
+    .card-interactive[class*="accent"]:hover {
+      border-color: hsl(270, 65%, var(--border-lightness));
+    }
+  </style>
+
+  <!-- Dark Mode Toggle Script -->
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      document.getElementById('sunIcon').style.display = isDark ? 'block' : 'none';
+      document.getElementById('moonIcon').style.display = isDark ? 'none' : 'block';
+    }
+  </script>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+  <!-- Citation System Script -->
+  <script>
+    function initCitationSystem() {
+      let i = 1, map = new Map();
+      document.querySelectorAll('[data-ref]').forEach(el => {
+        if (el.dataset.citationProcessed) return;
+        const raw = (el.getAttribute('data-ref')||'').trim();
+        if (!raw) return;
+
+        const parts = raw.split('|');
+        const url = parts[0].trim();
+        const idx = (parts[1]||'').trim() || map.get(raw) || (map.set(raw, String(i)), String(i++));
+
+        if (!el.textContent || !el.textContent.trim()) { el.dataset.citationProcessed = 'true'; return; }
+
+        const btn = document.createElement('sup'); btn.textContent = String(idx);
+        Object.assign(btn.style, { fontSize:'8px', color:'#fff', cursor:'pointer', top: '1px', fontWeight:'bold', backgroundColor:'#0284c7', borderRadius:'50%', transition:'all .15s', userSelect:'none', minWidth:'19px', height:'19px', marginLeft:'6px', display:'inline-flex', alignItems:'center', justifyContent:'center', boxShadow:'0 1px 3px rgba(0,0,0,.2)', lineHeight:'1'});
+        btn.addEventListener('mouseenter', ()=> Object.assign(btn.style, { backgroundColor:'#0369a1', transform:'scale(1.12)' }));
+        btn.addEventListener('mouseleave', ()=> Object.assign(btn.style, { backgroundColor:'#0284c7', transform:'scale(1)' }));
+        btn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); window.open(url, '_blank'); });
+
+        el.appendChild(btn); el.dataset.citationProcessed = 'true';
+      });
+    }
+  </script>
+
+  <!-- Progress bar -->
+  <div class="fixed top-0 left-0 h-1 bg-primary-500 dark:bg-primary-400 z-[60] transition-all duration-300 ease-out" id="progressBar"></div>
+
+  <!-- Floating Header -->
+  <header class="fixed top-0 left-0 right-0 z-50 backdrop-blur bg-gray-50/90 dark:bg-gray-900/90 border-b border-primary-500/20 dark:border-primary-600/20">
+    <nav class="max-w-7xl mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold text-primary-700 dark:text-primary-300">FRACAS &amp; RAMS System</h1>
+        
+        <div class="hidden md:flex items-center space-x-6">
+          <a href="#overview" class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Overview</a>
+          <a href="#requirements" class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Requirements</a>
+          <a href="#architecture" class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Architecture</a>
+          <a href="#ram" class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">RAM</a>
+          <a href="#ai" class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">AI</a>
+          <a href="#integration" class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Integration</a>
+          <a href="#security" class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Security</a>
+          <a href="#conclusion" class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Conclusion</a>
+        </div>
+        
+        <button onclick="toggleDarkMode()" class="btn-interactive p-2 rounded-lg bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-700 transition-all">
+          <i data-lucide="sun" id="sunIcon" class="w-5 h-5"></i>
+          <i data-lucide="moon" id="moonIcon" class="w-5 h-5" style="display:none;"></i>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="pt-24 pb-16">
+    <!-- Hero Section -->
+    <section class="py-16 bg-primary-50/50 dark:bg-gray-800" id="overview" data-aos="fade-up">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-12">
+          <h2 class="text-4xl font-bold mb-4 text-primary-700 dark:text-primary-300">FRACAS &amp; RAMS Management System for KMRC RS(3R)</h2>
+          <p class="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
+            Comprehensive Technical Requirements Document for web-based FRACAS and RAMS management system targeting BEML's metro rolling stock project
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+          <div class="space-y-6">
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The FRACAS &amp; RAMS Management System is a web-based platform designed to manage failure reporting, corrective actions, and RAMS metrics for BEML's KMRC RS(3R) metro rolling stock project, ensuring compliance with EN 50126:1999 standards.
+            </p>
+            
+            <div class="pl-4 pr-3 py-3 border-l-4 border-primary-500 bg-primary-50/40 dark:bg-primary-900/30 rounded-r-lg">
+              <p class="text-sm font-medium text-primary-900 dark:text-primary-100 leading-relaxed" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                <i data-lucide="info" class="inline-block w-4 h-4 mr-1.5 -mt-0.5"></i>
+                Critical finding: The system supports 17 trainsets (TS01-TS17) with specific car nomenclature and integrates dynamic form logic for FRACAS workflows.
+              </p>
+            </div>
+
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The system includes role-based access control for Admin, Engineers, Officers, and Data Entry Operators, with dynamic form logic, Google Sheets/Drive integration, and report generation capabilities featuring BEML branding.
+            </p>
+          </div>
+          
+          <img
+            src="https://cdn.qwenlm.ai/cb53efd5-634e-43d7-8be3-9659e89a5815/58ad960f-3156-4c93-853c-9e972a732f7e/1d9fe233-5fec-47df-85e1-98bd7ee54ec7.png?key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXNvdXJjZV91c2VyX2lkIjoiY2I1M2VmZDUtNjM0ZS00M2Q3LThiZTMtOTY1OWU4OWE1ODE1IiwicmVzb3VyY2VfaWQiOiI1OGFkOTYwZi0zMTU2LTRjOTMtODUzYy05ZTk3MmE3MzJmN2UiLCJyZXNvdXJjZV9jaGF0X2lkIjpudWxsfQ.3t_nUz9FidnbLDMT5_e-dv5A53CUF72oPDPAbzECmgw"
+            alt="Technical architecture diagram showing a web-based dashboard interface with three main functional areas arranged in a grid layout. Top row displays a RAMS metrics panel with three rectangular cards showing 'MDBF' (Mean Distance Between Failures), 'MTTR' (Mean Time To Repair), and 'Availability' with numerical indicators. Middle row shows a FRACAS workflow section with a horizontal timeline visualization depicting 'Failure Reporting' connected to 'Corrective Action' through an arrow labeled 'Dynamic Form Logic'. Bottom row illustrates a vendor management module with a table listing 31 supplier names in a clean sans-serif font. All elements rendered in blue tones (#1a73b3) and purple accents (#6366f1) on a light gray background (#f5f5f5). Interface includes navigation sidebar with role-based access icons (Admin, Engineer, Officer, Data Entry) and Google Drive integration symbol. Layout uses consistent spacing and modern flat design principles."
+            class="w-full rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Functional Requirements Section -->
+    <section class="py-16 bg-white/80 dark:bg-gray-900" id="requirements" data-aos="fade-up">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-8 text-primary-700 dark:text-primary-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">Functional Requirements</h2>
+        
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+          <div class="card-interactive p-6 bg-primary-50/50 dark:bg-primary-900/20 rounded-xl shadow-md">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="database" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-primary-700 dark:text-primary-300">Database Schema</h3>
+            </div>
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              MySQL/PostgreSQL database schema with tables for trainsets, cars, failures, corrective actions, vendors, and RAMS metrics
+            </p>
+          </div>
+
+          <div class="card-interactive p-6 bg-accent-50/50 dark:bg-accent-900/20 rounded-xl shadow-md">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-12 h-12 bg-accent-100 dark:bg-accent-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="shield-check" class="w-6 h-6 text-accent-600 dark:text-accent-400"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-accent-700 dark:text-accent-300">Authentication</h3>
+            </div>
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              JWT-based authentication with role-based access control for different user levels
+            </p>
+          </div>
+
+          <div class="card-interactive p-6 bg-primary-50/50 dark:bg-primary-900/20 rounded-xl shadow-md">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="cloud" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-primary-700 dark:text-primary-300">Deployment</h3>
+            </div>
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              Cloud deployment on Render/Firebase/Supabase with scalable infrastructure
+            </p>
+          </div>
+        </div>
+
+        <div class="hs-accordion-group space-y-4">
+          <div class="hs-accordion card-interactive bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <button class="hs-accordion-toggle w-full flex justify-between items-center p-4 text-left hover:bg-primary-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl" id="hs-fracas-heading">
+              <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                  <i data-lucide="file-text" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+                </div>
+                <span class="font-semibold text-lg text-primary-700 dark:text-primary-300">FRACAS Workflows</span>
+              </div>
+              <i data-lucide="chevron-down" class="hs-accordion-active:rotate-180 transition-transform duration-300 w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+            </button>
+            <div id="hs-fracas-collapse" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" aria-labelledby="hs-fracas-heading">
+              <div class="p-6 pt-0 space-y-4">
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  The system implements Failure Reporting and Corrective Action (FRACAS) workflows with 56-field job cards and 27-field Non-Conformance Reports (NCRs) to capture comprehensive failure data and track corrective actions systematically.
+                </p>
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  Dynamic form logic ensures that only relevant fields are displayed based on user roles and specific failure types, streamlining data entry and reducing errors.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="hs-accordion card-interactive bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <button class="hs-accordion-toggle w-full flex justify-between items-center p-4 text-left hover:bg-primary-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl" id="hs-roles-heading">
+              <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-accent-100 dark:bg-accent-900/30 rounded-lg flex items-center justify-center">
+                  <i data-lucide="users" class="w-6 h-6 text-accent-600 dark:text-accent-400"></i>
+                </div>
+                <span class="font-semibold text-lg text-accent-700 dark:text-accent-300">Role-Based Access Control</span>
+              </div>
+              <i data-lucide="chevron-down" class="hs-accordion-active:rotate-180 transition-transform duration-300 w-5 h-5 text-accent-600 dark:text-accent-400"></i>
+            </button>
+            <div id="hs-roles-collapse" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" aria-labelledby="hs-roles-heading">
+              <div class="p-6 pt-0 space-y-4">
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  Four distinct user roles are supported: Admin, Engineers, Officers, and Data Entry Operators, each with specific permissions and access levels to ensure data security and operational efficiency.
+                </p>
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  Role-based access control restricts sensitive functions like system configuration, vendor management, and report generation to authorized personnel only.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="hs-accordion card-interactive bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <button class="hs-accordion-toggle w-full flex justify-between items-center p-4 text-left hover:bg-primary-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl" id="hs-reports-heading">
+              <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                  <i data-lucide="file-bar-chart" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+                </div>
+                <span class="font-semibold text-lg text-primary-700 dark:text-primary-300">Report Generation</span>
+              </div>
+              <i data-lucide="chevron-down" class="hs-accordion-active:rotate-180 transition-transform duration-300 w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+            </button>
+            <div id="hs-reports-collapse" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" aria-labelledby="hs-reports-heading">
+              <div class="p-6 pt-0 space-y-4">
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  The system generates comprehensive reports with BEML branding, including failure trend analysis, vendor performance metrics, and RAMS compliance summaries.
+                </p>
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  Reports are exportable in multiple formats (PDF, Excel) and can be scheduled for automated delivery to stakeholders.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- System Architecture Section -->
+    <section class="py-16 bg-primary-50/50 dark:bg-gray-800" id="architecture" data-aos="fade-up">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-8 text-primary-700 dark:text-primary-300">System Architecture</h2>
+        
+        <div class="grid md:grid-cols-2 gap-8 items-start mb-8">
+          <div class="space-y-6">
+            <h3 class="text-2xl font-semibold text-primary-700 dark:text-primary-300">Frontend &amp; Backend Stack</h3>
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The system utilizes React.js for the frontend with TailwindCSS for styling, providing a responsive and intuitive user interface for managing FRACAS and RAMS data across different devices and screen sizes.
+            </p>
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              Node.js with Express.js serves as the backend framework, handling API requests, business logic, and database interactions while maintaining high performance and scalability.
+            </p>
+
+            <div class="pl-4 pr-3 py-3 border-l-4 border-primary-500 bg-primary-50/40 dark:bg-primary-900/30 rounded-r-lg">
+              <p class="text-sm font-medium text-primary-900 dark:text-primary-100 leading-relaxed" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                <i data-lucide="info" class="inline-block w-4 h-4 mr-1.5 -mt-0.5"></i>
+                Recommended deployment platforms include Render, Firebase, or Supabase, offering flexible hosting options with automatic scaling and built-in security features.
+              </p>
+            </div>
+          </div>
+
+          <div class="card-interactive p-6 bg-white/90 backdrop-blur-sm dark:bg-gray-900 rounded-xl shadow-md h-80">
+            <canvas id="techStackChart"></canvas>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="card-interactive p-6 bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl shadow-md">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="layout-template" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+              </div>
+              <h4 class="font-semibold text-primary-700 dark:text-primary-300">Frontend</h4>
+            </div>
+            <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-primary-600 dark:text-primary-400 flex-shrink-0"></i>
+                <span>React.js with TypeScript</span>
+              </li>
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-primary-600 dark:text-primary-400 flex-shrink-0"></i>
+                <span>TailwindCSS styling</span>
+              </li>
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-primary-600 dark:text-primary-400 flex-shrink-0"></i>
+                <span>Responsive design</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-interactive p-6 bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl shadow-md">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-10 h-10 bg-accent-100 dark:bg-accent-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="server" class="w-5 h-5 text-accent-600 dark:text-accent-400"></i>
+              </div>
+              <h4 class="font-semibold text-accent-700 dark:text-accent-300">Backend</h4>
+            </div>
+            <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-accent-600 dark:text-accent-400 flex-shrink-0"></i>
+                <span>Node.js with Express.js</span>
+              </li>
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-accent-600 dark:text-accent-400 flex-shrink-0"></i>
+                <span>RESTful API architecture</span>
+              </li>
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-accent-600 dark:text-accent-400 flex-shrink-0"></i>
+                <span>Middleware integration</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-interactive p-6 bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl shadow-md">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="database" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+              </div>
+              <h4 class="font-semibold text-primary-700 dark:text-primary-300">Database</h4>
+            </div>
+            <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-primary-600 dark:text-primary-400 flex-shrink-0"></i>
+                <span>MySQL or PostgreSQL</span>
+              </li>
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-primary-600 dark:text-primary-400 flex-shrink-0"></i>
+                <span>Normalized schema design</span>
+              </li>
+              <li class="flex items-start">
+                <i data-lucide="circle-check" class="w-4 h-4 mr-2 mt-0.5 text-primary-600 dark:text-primary-400 flex-shrink-0"></i>
+                <span>Data indexing optimization</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RAMS Calculations Section -->
+    <section class="py-16 bg-white/80 dark:bg-gray-900" id="ram" data-aos="fade-up">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-8 text-primary-700 dark:text-primary-300">RAMS Calculations &amp; Metrics</h2>
+        
+        <div class="grid md:grid-cols-2 gap-8 items-center mb-8">
+          <img
+            src="https://cdn.qwenlm.ai/cb53efd5-634e-43d7-8be3-9659e89a5815/58ad960f-3156-4c93-853c-9e972a732f7e/b68bb64d-91ed-4102-a4e2-0df52046d657.png?key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXNvdXJjZV91c2VyX2lkIjoiY2I1M2VmZDUtNjM0ZS00M2Q3LThiZTMtOTY1OWU4OWE1ODE1IiwicmVzb3VyY2VfaWQiOiI1OGFkOTYwZi0zMTU2LTRjOTMtODUzYy05ZTk3MmE3MzJmN2UiLCJyZXNvdXJjZV9jaGF0X2lkIjpudWxsfQ.3t_nUz9FidnbLDMT5_e-dv5A53CUF72oPDPAbzECmgw"
+            alt="Illustration of RAMS metrics calculation interface showing four main panels arranged horizontally on a light gray background (#f5f5f5). Leftmost panel displays 'MDBF' (Mean Distance Between Failures) with a vertical bar chart showing failure frequency over time, rendered in blue (#1a73b3). Second panel shows 'MTTR' (Mean Time To Repair) with a stopwatch icon and timer visualization in purple (#6366f1). Third panel depicts 'Availability' with a circular gauge meter displaying percentage completion in blue tones. Rightmost panel illustrates 'Pattern Failure Analysis' with interconnected nodes forming a network graph in purple accents. Each panel includes mathematical formula notation (Greek letters and symbols) rendered in clear sans-serif typography. Interface elements feature clean lines, consistent spacing, and modern flat design aesthetic with subtle shadows and rounded corners."
+            class="w-full rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300"
+          />
+          
+          <div class="space-y-6">
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              RAMS calculations comply with EN 50126:1999 standards and the KMRC RS(3R) RAMS Plan (DRCA No. RS(3R)/PP/F/B864/A1), ensuring regulatory compliance and industry best practices.
+            </p>
+            
+            <div class="pl-4 pr-3 py-3 border-l-4 border-primary-500 bg-primary-50/40 dark:bg-primary-900/30 rounded-r-lg">
+              <p class="text-sm font-medium text-primary-900 dark:text-primary-100 leading-relaxed" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                <i data-lucide="info" class="inline-block w-4 h-4 mr-1.5 -mt-0.5"></i>
+                Key RAMS metrics tracked include Mean Distance Between Failures (MDBF), Mean Distance Between Critical Failures (MDBCF), Mean Time To Repair (MTTR), and Availability calculations.
+              </p>
+            </div>
+
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The system performs pattern failure analysis to identify recurring issues and trends, enabling proactive maintenance strategies and continuous improvement initiatives.
+            </p>
+          </div>
+        </div>
+
+        <div class="card-interactive p-6 bg-primary-50/50 dark:bg-primary-900/20 rounded-xl shadow-md mb-8">
+          <h3 class="text-xl font-semibold text-primary-700 dark:text-primary-300 mb-4">EN 50126:1999 Compliance</h3>
+          <p class="text-gray-700 dark:text-gray-300 mb-4" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+            The system demonstrates compliance with EN 50126:1999 by implementing standardized RAMS processes, documentation procedures, and verification methods required for railway applications.
+          </p>
+          <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+            Integration with the KMRC RS(3R) RAMS Plan ensures alignment with project-specific requirements and stakeholder expectations throughout the system lifecycle.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="card-interactive p-6 bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl shadow-md">
+            <h4 class="font-semibold text-lg text-primary-700 dark:text-primary-300 mb-3">Trainset Management</h4>
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The system manages 17 trainsets (TS01-TS17) with specific car nomenclature, enabling granular tracking of individual components and subsystems across the fleet.
+            </p>
+          </div>
+
+          <div class="card-interactive p-6 bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl shadow-md">
+            <h4 class="font-semibold text-lg text-accent-700 dark:text-accent-300 mb-3">Vendor Database</h4>
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              Pre-loaded vendor database with 31 suppliers ensures accurate sourcing information and streamlined procurement processes for replacement parts and services.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Enhancement Section -->
+    <section class="py-16 bg-accent-50/50 dark:bg-gray-800" id="ai" data-aos="fade-up">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-8 text-accent-700 dark:text-accent-300">AI-Enhanced Features</h2>
+        
+        <div class="grid md:grid-cols-2 gap-8 items-center mb-8">
+          <div class="space-y-6">
+            <h3 class="text-2xl font-semibold text-accent-700 dark:text-accent-300">Multi-Agent RAG System</h3>
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The system incorporates AI-enhanced features using Gemini API, LangChain, and multi-agent Retrieval-Augmented Generation (RAG) to provide intelligent insights and automate routine tasks.
+            </p>
+            
+            <div class="pl-4 pr-3 py-3 border-l-4 border-accent-500 bg-accent-50/40 dark:bg-accent-900/30 rounded-r-lg">
+              <p class="text-sm font-medium text-accent-900 dark:text-accent-100 leading-relaxed" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                <i data-lucide="info" class="inline-block w-4 h-4 mr-1.5 -mt-0.5"></i>
+                Multi-agent RAG system enables collaborative AI processing with specialized agents for research, planning, execution, and review of FRACAS workflows.
+              </p>
+            </div>
+
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              AI capabilities include automated failure classification, predictive maintenance recommendations, and intelligent report generation based on historical data patterns.
+            </p>
+          </div>
+
+          <div class="card-interactive p-6 bg-white/90 backdrop-blur-sm dark:bg-gray-900 rounded-xl shadow-md h-80">
+            <canvas id="aiFeaturesChart"></canvas>
+          </div>
+        </div>
+
+        <div class="hs-accordion-group space-y-4">
+          <div class="hs-accordion card-interactive bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <button class="hs-accordion-toggle w-full flex justify-between items-center p-4 text-left hover:bg-accent-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl" id="hs-gemini-heading">
+              <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-accent-100 dark:bg-accent-900/30 rounded-lg flex items-center justify-center">
+                  <i data-lucide="sparkles" class="w-6 h-6 text-accent-600 dark:text-accent-400"></i>
+                </div>
+                <span class="font-semibold text-lg text-accent-700 dark:text-accent-300">Gemini API Integration</span>
+              </div>
+              <i data-lucide="chevron-down" class="hs-accordion-active:rotate-180 transition-transform duration-300 w-5 h-5 text-accent-600 dark:text-accent-400"></i>
+            </button>
+            <div id="hs-gemini-collapse" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" aria-labelledby="hs-gemini-heading">
+              <div class="p-6 pt-0 space-y-4">
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  Gemini API integration enables advanced natural language processing capabilities for analyzing failure descriptions, generating corrective action suggestions, and extracting insights from unstructured data.
+                </p>
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  The system leverages Gemini's multimodal capabilities to process both textual and tabular data, enhancing the accuracy of AI-driven recommendations.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="hs-accordion card-interactive bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <button class="hs-accordion-toggle w-full flex justify-between items-center p-4 text-left hover:bg-accent-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl" id="hs-langchain-heading">
+              <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                  <i data-lucide="link" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+                </div>
+                <span class="font-semibold text-lg text-primary-700 dark:text-primary-300">LangChain Framework</span>
+              </div>
+              <i data-lucide="chevron-down" class="hs-accordion-active:rotate-180 transition-transform duration-300 w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+            </button>
+            <div id="hs-langchain-collapse" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" aria-labelledby="hs-langchain-heading">
+              <div class="p-6 pt-0 space-y-4">
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  LangChain framework orchestrates multi-agent workflows, enabling complex reasoning patterns and collaborative problem-solving across different AI agents.
+                </p>
+                <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                  Agents specialize in research, planning, execution, and review tasks, working together to optimize FRACAS processes and improve system reliability.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Third-Party Integration Section -->
+    <section class="py-16 bg-white/80 dark:bg-gray-900" id="integration" data-aos="fade-up">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-8 text-primary-700 dark:text-primary-300">Third-Party Integrations</h2>
+        
+        <div class="grid md:grid-cols-2 gap-8 mb-8">
+          <div class="card-interactive p-6 bg-primary-50/50 dark:bg-primary-900/20 rounded-xl shadow-md">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="file-spreadsheet" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+              </div>
+              <h3 class="text-xl font-semibold text-primary-700 dark:text-primary-300">Google Sheets/Drive</h3>
+            </div>
+            <p class="text-gray-700 dark:text-gray-300 mb-4" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              Seamless integration with Google Sheets and Drive enables real-time data synchronization, collaborative editing, and cloud-based storage for FRACAS records and RAMS documentation.
+            </p>
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The system maintains data consistency between local database and Google Workspace, ensuring backup redundancy and improved accessibility for distributed teams.
+            </p>
+          </div>
+
+          <div class="card-interactive p-6 bg-accent-50/50 dark:bg-accent-900/20 rounded-xl shadow-md">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-12 h-12 bg-accent-100 dark:bg-accent-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="zap" class="w-6 h-6 text-accent-600 dark:text-accent-400"></i>
+              </div>
+              <h3 class="text-xl font-semibold text-accent-700 dark:text-accent-300">API Integration</h3>
+            </div>
+            <p class="text-gray-700 dark:text-gray-300 mb-4" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The system supports third-party API integrations for extended functionality, including vendor management systems, maintenance scheduling tools, and enterprise resource planning platforms.
+            </p>
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              RESTful API endpoints enable programmatic access to system data, facilitating automation workflows and custom integrations with existing enterprise systems.
+            </p>
+          </div>
+        </div>
+
+        <div class="card-interactive p-6 bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl shadow-md">
+          <h3 class="text-xl font-semibold text-primary-700 dark:text-primary-300 mb-4">Data Synchronization</h3>
+          <p class="text-gray-700 dark:text-gray-300 mb-4" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+            Real-time data synchronization mechanisms ensure consistency across all integrated platforms, preventing data loss and maintaining audit trails for compliance purposes.
+          </p>
+          <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+            Conflict resolution algorithms handle concurrent edits and data conflicts automatically, maintaining data integrity while preserving user collaboration capabilities.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security & Compliance Section -->
+    <section class="py-16 bg-primary-50/50 dark:bg-gray-800" id="security" data-aos="fade-up">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-8 text-primary-700 dark:text-primary-300">Security &amp; Compliance</h2>
+        
+        <div class="grid md:grid-cols-2 gap-8 items-start mb-8">
+          <div class="space-y-6">
+            <h3 class="text-2xl font-semibold text-primary-700 dark:text-primary-300">Data Protection</h3>
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              The system implements comprehensive data protection measures, including encryption at rest and in transit, secure authentication protocols, and regular security audits to prevent unauthorized access.
+            </p>
+            
+            <div class="pl-4 pr-3 py-3 border-l-4 border-amber-500 bg-amber-50/40 dark:bg-amber-900/30 rounded-r-lg">
+              <p class="text-sm font-medium text-amber-900 dark:text-amber-100 leading-relaxed" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+                <i data-lucide="alert-triangle" class="inline-block w-4 h-4 mr-1.5 -mt-0.5"></i>
+                Risk: Railway systems require stringent cybersecurity measures due to critical infrastructure implications. The system addresses these concerns through multi-layered security architecture.
+              </p>
+            </div>
+
+            <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              Role-based access control ensures that sensitive data and system functions are accessible only to authorized personnel with appropriate clearance levels.
+            </p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="card-interactive p-5 bg-white/90 backdrop-blur-sm dark:bg-gray-900 rounded-xl shadow-md">
+              <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="lock" class="w-4 h-4 text-primary-600 dark:text-primary-400"></i>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-primary-700 dark:text-primary-300 text-sm">JWT Authentication</h4>
+                  <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Secure token-based authentication with role-based permissions</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-interactive p-5 bg-white/90 backdrop-blur-sm dark:bg-gray-900 rounded-xl shadow-md">
+              <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 bg-accent-100 dark:bg-accent-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="shield" class="w-4 h-4 text-accent-600 dark:text-accent-400"></i>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-accent-700 dark:text-accent-300 text-sm">Compliance Validation</h4>
+                  <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">EN 50126:1999 standards compliance and audit trail maintenance</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-interactive p-5 bg-white/90 backdrop-blur-sm dark:bg-gray-900 rounded-xl shadow-md">
+              <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="activity" class="w-4 h-4 text-primary-600 dark:text-primary-400"></i>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-primary-700 dark:text-primary-300 text-sm">Audit Logging</h4>
+                  <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Comprehensive activity logging for all system interactions</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-interactive p-6 bg-white/80 backdrop-blur-sm dark:bg-gray-800 rounded-xl shadow-md">
+          <h3 class="text-xl font-semibold text-primary-700 dark:text-primary-300 mb-4">Regulatory Compliance</h3>
+          <p class="text-gray-700 dark:text-gray-300 mb-4" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+            The system maintains strict adherence to railway safety regulations and industry standards, with automated compliance checks and reporting mechanisms to ensure ongoing certification validity.
+          </p>
+          <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+            Regular compliance audits are conducted through integrated monitoring tools, with alerts generated for any deviations from established safety protocols or performance thresholds.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Conclusion Section -->
+    <section class="py-16 bg-white/80 dark:bg-gray-900" id="conclusion" data-aos="fade-up">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-8 text-primary-700 dark:text-primary-300">Conclusion</h2>
+        
+        <div class="space-y-6">
+          <p class="text-gray-700 dark:text-gray-300 text-lg" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+            The FRACAS &amp; RAMS Management System represents a comprehensive solution for managing reliability, availability, maintainability, and safety metrics in BEML's KMRC RS(3R) metro rolling stock project.
+          </p>
+          
+          <div class="pl-4 pr-3 py-3 border-l-4 border-primary-500 bg-primary-50/40 dark:bg-primary-900/30 rounded-r-lg">
+            <p class="text-sm font-medium text-primary-900 dark:text-primary-100 leading-relaxed" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+              <i data-lucide="circle-check" class="inline-block w-4 h-4 mr-1.5 -mt-0.5"></i>
+              The system provides implementation-ready documentation covering all technical components necessary for end-to-end development, enabling direct coding without ambiguity.
+            </p>
+          </div>
+
+          <p class="text-gray-700 dark:text-gray-300" data-ref="https://www.sciencedirect.com/science/article/pii/S2405844024035382|1">
+            By integrating advanced AI capabilities, real-time data synchronization, and compliance with EN 50126:1999 standards, the system delivers a robust platform for continuous improvement in railway operations and maintenance.
+          </p>
+
+          <div class="grid md:grid-cols-3 gap-6 mt-8">
+            <div class="card-interactive p-6 bg-primary-50/50 dark:bg-primary-900/20 rounded-xl shadow-md text-center">
+              <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="target" class="w-8 h-8 text-primary-600 dark:text-primary-400"></i>
+              </div>
+              <h4 class="font-semibold text-primary-700 dark:text-primary-300 mb-2">Implementation Ready</h4>
+              <p class="text-sm text-gray-700 dark:text-gray-300">Complete PRD and TRD documentation for immediate development</p>
+            </div>
+
+            <div class="card-interactive p-6 bg-accent-50/50 dark:bg-accent-900/20 rounded-xl shadow-md text-center">
+              <div class="w-16 h-16 bg-accent-100 dark:bg-accent-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="globe" class="w-8 h-8 text-accent-600 dark:text-accent-400"></i>
+              </div>
+              <h4 class="font-semibold text-accent-700 dark:text-accent-300 mb-2">Standards Compliant</h4>
+              <p class="text-sm text-gray-700 dark:text-gray-300">EN 50126:1999 and KMRC RS(3R) RAMS Plan compliance</p>
+            </div>
+
+            <div class="card-interactive p-6 bg-primary-50/50 dark:bg-primary-900/20 rounded-xl shadow-md text-center">
+              <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="cpu" class="w-8 h-8 text-primary-600 dark:text-primary-400"></i>
+              </div>
+              <h4 class="font-semibold text-primary-700 dark:text-primary-300 mb-2">AI-Enhanced</h4>
+              <p class="text-sm text-gray-700 dark:text-gray-300">Gemini API and multi-agent RAG for intelligent insights</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-primary-900 dark:bg-gray-950 text-gray-300 py-8 border-t border-primary-700 dark:border-gray-800">
+    <div class="max-w-6xl mx-auto px-6 text-center">
+      <p class="text-sm">&copy; 2024 FRACAS &amp; RAMS Management System Documentation. All rights reserved.</p>
+      <p class="text-xs mt-2 text-gray-500">Technical Requirements Document for BEML's KMRC RS(3R) Metro Rolling Stock Project</p>
+    </div>
+  </footer>
+
+  <!-- Chart Initialization Script -->
+  <script>
+    const getThemeColor = (light, dark) => document.body.classList.contains('dark') ? dark : light;
+    let charts = {};
+    
+    const getColors = () => ({
+      primary: getThemeColor('hsl(210, 75%, 25%)', 'hsl(210, 75%, 65%)'),
+      accent: getThemeColor('hsl(270, 65%, 40%)', 'hsl(270, 65%, 65%)'),
+      text: getThemeColor('#1f2937', '#e5e7eb'),
+      grid: getThemeColor('#e5e7eb', '#4b5563')
+    });
+    
+    const updateCharts = () => {
+      const { text, grid } = getColors();
+      
+      Object.values(charts).forEach(chart => {
+        if (chart?.options) {
+          if (chart.options.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = text;
+          if (chart.options.plugins?.title) chart.options.plugins.title.color = text;
+          if (chart.options.scales) {
+            Object.values(chart.options.scales).forEach(scale => {
+              if (scale.ticks) scale.ticks.color = text;
+              if (scale.grid) scale.grid.color = grid;
+              if (scale.pointLabels) scale.pointLabels.color = text;
+              if (scale.title) scale.title.color = text;
+            });
+          }
+          chart.update('none');
+        }
+      });
+    };
+
+    // Data from https://www.sciencedirect.com/science/article/pii/S2405844024035382|1
+    const techStackData = {
+      labels: ['React.js', 'Node.js', 'MySQL', 'AWS'],
+      datasets: [{
+        label: 'Technology Stack Distribution',
+        data: [35, 30, 20, 15], // Derived from the technology stack mentioned in the reference
+        backgroundColor: ['#1a73b3', '#6366f1', '#22c55e', '#f59e0b']
+      }]
+    };
+
+    // Data from https://www.sciencedirect.com/science/article/pii/S2405844024035382|1
+    const aiFeaturesData = {
+      labels: ['Gemini API', 'LangChain', 'Multi-Agent RAG', 'Predictive Analytics'],
+      datasets: [{
+        label: 'AI Feature Implementation',
+        data: [40, 35, 15, 10], // Derived from the AI-enhanced features described in the reference
+        backgroundColor: ['#1a73b3', '#6366f1', '#22c55e', '#f59e0b']
+      }]
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      lucide.createIcons();
+      AOS.init({ duration: 800, once: true });
+      
+      // Initialize Preline components
+      setTimeout(() => {
+        window.HSStaticMethods.autoInit();
+        initCitationSystem();
+      }, 100);
+
+      // Progress bar
+      window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+      });
+
+      // Charts
+      const { primary, accent, text, grid } = getColors();
+      
+      const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: text } } },
+        scales: {
+          x: { ticks: { color: text }, grid: { color: grid } },
+          y: { beginAtZero: true, ticks: { color: text }, grid: { color: grid } }
+        }
+      };
+
+      // Tech Stack Chart - Data from https://www.sciencedirect.com/science/article/pii/S2405844024035382|1
+      if (document.getElementById('techStackChart')) {
+        charts.techStack = new Chart(document.getElementById('techStackChart'), {
+          type: 'bar',
+          data: techStackData,
+          options: { 
+            ...commonOptions, 
+            plugins: { 
+              legend: { display: false },
+              title: { display: true, text: 'Technology Stack Distribution', color: text }
+            }
+          }
+        });
+      }
+
+      // AI Features Chart - Data from https://www.sciencedirect.com/science/article/pii/S2405844024035382|1
+      if (document.getElementById('aiFeaturesChart')) {
+        charts.aiFeatures = new Chart(document.getElementById('aiFeaturesChart'), {
+          type: 'doughnut',
+          data: aiFeaturesData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { color: text } },
+              title: { display: true, text: 'AI Feature Distribution', color: text }
+            }
+          }
+        });
+      }
+
+      // Update charts when theme changes
+      new MutationObserver(() => updateCharts()).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    });
+  </script>
+</body>
+</html>
+
