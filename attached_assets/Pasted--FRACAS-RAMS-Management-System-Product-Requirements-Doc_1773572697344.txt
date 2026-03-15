@@ -1,0 +1,822 @@
+# FRACAS & RAMS Management System - Product Requirements Document
+
+## 1. Application Overview
+
+### 1.1 Application Name
+FRACAS & RAMS Management System for KMRC RS(3R) Rolling Stock
+
+### 1.2 Application Description
+A comprehensive web-based Failure Reporting and Corrective Action System (FRACAS) integrated with Reliability, Availability, Maintainability and Safety (RAMS) calculation engine for BEML's KMRC RS(3R) metro rolling stock project. The system manages job cards, NCR reports, vendor information, fleet management, maintenance scheduling, and generates RAMS compliance reports including MDBF, MDBCF, MTTR, Availability and Pattern Failure analysis based on EN 50126:1999 standards and KMRC RS(3R) RAMS Plan (DRCA No. RS(3R)/PP/F/B864/A1).
+
+### 1.3 Target Users
+- Admin: Full read/write/edit access (Depot Incharge)
+- Engineers: Read/write access
+- Data Entry Operators: Read/write access
+- Officers: Read/write access
+
+## 2. Core Functional Modules
+
+### 2.1 Authentication & Authorization System
+
+#### 2.1.1 Login System
+- Two-tier access control:
+  - **Admin Login**: SHASHI SHEKHAR MISHRA (Password: 9799494321) - Full read/write/edit permissions
+  - **User Login**: Dropdown menu with following users:
+    - BEML/70147 - AKHILESH KUMAR YADAV (AKHILESH@1234) - Engineer
+    - BEML/70153 - CHANDAN KUMAR (CHANDAN@1234) - Engineer
+    - BEML/DATA ENTRY OPERATOR - KAUSHIK MONDAL (KAUSHIK@1234) - Data Entry Operator
+    - BEML/OFFICER/001 - ARAGHYA KAR (ARAGHYA@1234) - Officer
+    - BEML/OFFICER/002 - SHILPA SAHU (SHILPA@1234) - Officer
+    - BEML/OFFICER/003 - SHIRSHENDU MAJUMDAR (SHIRSHENDU@1234) - Officer
+    - BEML/OFFICER/004 - SUNIL KUMAR RAJAN (SUNIL@1234) - Officer
+
+#### 2.1.2 Role-Based Permissions
+- Admin: Create/Read/Update/Delete all records
+- Engineers/Officers/Data Entry: Create/Read/Update job cards, NCRs, reports
+
+### 2.2 Job Card Management Module
+
+#### 2.2.1 Job Card Entry Form
+Complete form with all 56 fields as specified:
+1. SN (Auto-increment)
+2. JC No (Editable, auto-generated)
+3. Job Card Issued to (Dropdown from user list)
+4. Failure Occurred Date
+5. Failure Occurred Time
+6. Depot Arriving Date
+7. Depot Arriving Time
+8. Job Card Issued Time
+9. Job Card Issued Date
+10. Expected Complete Date
+11. Expected Complete Time
+12. Reporting Location (Dropdown: KMRCL/BMRCL/DMRCL/MMRCL)
+13. CM/PM/OPM (Dropdown: Corrective Maintenance/Preventive Maintenance/Other Preventive Maintenance)
+14. Train Odometer Reading Data (in kms)
+15. Train No. (Dropdown: MR601-MR617)
+16. Car No (Dropdown with nomenclature: 1104-DMC1, 3104-MC1, 1204-DMC2, 2104-TC1, 2204-TC2, 3204-MC2)
+17. Failure Descriptions (Textarea)
+18. Work Pending? (Dropdown: Yes/No)
+19. Can be energized? (Conditional dropdown if Work Pending=Yes)
+20. Can be moved? (Conditional dropdown if Work Pending=Yes)
+21. Withdraw? (Dropdown: Yes/No)
+22. Delay? (Dropdown: Yes/No)
+23. Delay Time (Conditional input if Delay=Yes, format: DD/HH/MM)
+24. Reported By (Dropdown from user list)
+25. Inspector (Dropdown from user list)
+26. Job Operating Conditions (Conditional dropdown if CM: Normal/Abnormal/Emergency)
+27. Effects on Train Service (Dropdown: Yes/No)
+28. Service Distinction (Conditional dropdown if CM: No effect Service/Changeover/Push Out/Fail to Dispatch/Deboarding/Delay)
+29. Delay Duration (Conditional dropdown if Service Distinction=Delay: Less than 1 Minute/1 Minute/2 Minutes/3 Minutes/4 Minutes/5 Minutes/More than 5 Minutes)
+30. Service Checks (Conditional dropdown if PM: A Service Check/B1 Service Check/B4 Service Check/B8 Service Check/C1 Service Check/C2 Service Check/C5 Service Check)
+31. System (Dropdown: General/Traction/Brake/Door/AC/Bogie/TIMS/Communication/Fire Detection/Vehicle Control/Aux Electric/Lightning/Gangway)
+32. Sub-System (Dynamic dropdown based on System selection)
+33. Equipments (Dynamic dropdown based on Sub-System)
+34. Component (Dynamic dropdown based on Equipment)
+35. Part(s) (Text input)
+36. NCR No. (Auto-sync with NCR module)
+37. Serial No.
+38. Failure Location (Dropdown: RH1/RH2/LH1/LH2/1st/2nd/3rd/4th)
+39. Failure Name
+40. Description of actions taken (Textarea)
+41. Replace/Change Info. (Dropdown: Yes/No)
+42. Components Taken Out Date
+43. Serial No. of Components Taken Out
+44. Components Taken In Date
+45. Serial No. of Components Taken In
+46. Car Lifting Required? (Dropdown: Yes/No)
+47. No. of Men (Numeric)
+48. Duration of Repair (hr) (Numeric)
+49. Root Cause (Textarea)
+50. Job Card Close Date
+51. Job Card Close Time
+52. Name of Action Endorsement (Dropdown from user list)
+53. Date of Action Endorsement
+54. Failure Category (Dropdown: 1.System Design(HECP/SECP) / 2.Software Error / 3.Equipment/component failure--Itself / 4.Equipment/component failure--NFF (replaced as suspected) / 5.Poor Workmanship / 6.Loose Wire and Connector / 7.NFF(MCB tripped) / 8.NFF(System hang-up) / 9.NFF(Others) / 10.Incorrect Operation & Main't of equip / 11.Failure due to external factor / 12.Others(Service Check & Unscheduled Maintenance))
+55. FRACAS Number (Auto-generated for internal calculation)
+56. Attachments (Multiple file upload: images/documents)
+
+#### 2.2.2 Job Card Dashboard
+- Display columns: FRACAS No., Job Card Taken By, Date (newest first), TrainSet, Car, System, Sub-System, System Description, Status
+- Category filter tabs: Corrective Maintenance/Preventive Maintenance/Other Preventive Maintenance/Service Affecting Failures
+- Advanced search filters:
+  - By System (dropdown) → Auto-populate related faulty items
+  - By Faulty Item → Show all related job cards + failure count
+  - By Train Number (MR601-MR617)
+  - By TrainSet (TS01-TS17)
+  - By Date Range (From Date - To Date)
+  - By Month
+  - By Depot
+  - By Car Number
+- Click any job card to view full details and download option
+
+#### 2.2.3 Job Card Export Format
+- Single job card export in A4 format PDF
+- Include BEML logo (SVG provided)
+- Match exact format as shared by user
+- Include all filled fields and attachments
+- Auto-pagination for multi-page content
+
+#### 2.2.4 Job Card Import Function
+- Support CSV/Excel/PDF file upload
+- Auto-fill all fields based on column mapping
+- Validate data format before import
+- Error handling with clear messages
+
+### 2.3 NCR (Non-Conformity Report) Management Module
+
+#### 2.3.1 NCR Entry Form
+Complete form with 26 mandatory fields:
+1. NCR REPORT NO (Auto/Manual entry)
+2. DATE OF NCR
+3. DATE OF DETECTION
+4. ITEM DESCRIPTION
+5. NCR Description (Textarea)
+6. Part Number
+7. Modified or Unmodified (Dropdown)
+8. FMI
+9. Faulty Sl. No.
+10. Healthy Sl. No.
+11. ISSUED BY (Dropdown from user list)
+12. Qty. (Numeric)
+13. SUB-SYSTEM (Dropdown)
+14. Train No (Dropdown: MR601-MR617)
+15. CAR (Dropdown: DMC1/TC1/MC1/MC2/TC2/DMC2)
+16. RESPONSIBILITY (Dropdown: Vendor/BEML/Others, with vendor list from approved vendors)
+17. STATUS (Dropdown: Open/Closed/Investigation)
+18. ITEM REPAIRED/RECOUPED
+19. ITEM REPLACED (IF ANY)
+20. DATE OF REPAIRED/REPLACED
+21. SOURCE (Dropdown: Internal/External)
+22. DATE OF INVESTIGATION REPORT RECEIVED
+23. NCR CLOSED BY DOC. (Checkbox/Date)
+24. GATE PASS S/No
+25. Remarks (Textarea)
+26. IR Printed (Checkbox)
+27. Picture Attachments (Multiple upload)
+
+#### 2.3.2 NCR Dashboard
+- Display all NCR records with key columns
+- Filter options: Status/Train No./Date Range/Vendor/System
+- Search by NCR No., Item Description, Train No.
+- Status update functionality
+- Auto-sync with Job Card module (matching TrainSet, Car No., Item Name, Serial No.)
+
+#### 2.3.3 NCR Export Format
+- Generate NCR in exact format as provided
+- Include BEML logo
+- Export options: PDF/Word
+- Preview before download
+- Send generated report to OEM directly
+
+#### 2.3.4 NCR Import Function
+- Import NCR list from Excel/CSV
+- Auto-map columns to NCR fields
+- Validate and display import results
+
+#### 2.3.5 NCR-Job Card Synchronization
+- Auto-link NCR and Job Card when matching:
+  - TrainSet Number
+  - Car Number
+  - Item Name
+  - Serial Number (optional)
+- Display NCR No. in Job Card
+- Display Job Card No. in NCR
+
+### 2.4 Fleet Management Module
+
+#### 2.4.1 TrainSet Configuration
+- TrainSet range: TS01-TS17
+- Train Number mapping: MR601-MR617
+- Car nomenclature system:
+  - 1104 = DMC1
+  - 3104 = MC1
+  - 1204 = DMC2
+  - 2104 = TC1
+  - 2204 = TC2
+  - 3204 = MC2
+  - Last 2 digits (04) = Train Number identifier
+
+#### 2.4.2 Daily KM Entry & Tracking
+- Daily KM entry option for all trainsets (TS01-TS17)
+- Auto-collect KM data from job cards (Train Odometer Reading Data field)
+- Display cumulative distance per trainset
+- Display daily distance per trainset
+- Search options:
+  - TrainSet-wise KM
+  - Date-wise KM
+  - Date range KM
+- Import/Export KM data
+- Analytics dashboard for KM trends
+
+### 2.5 RAMS Calculation Engine
+
+#### 2.5.1 Calculation Formulas (Based on RAMS Plan Document DRCA No. RS(3R)/PP/F/B864/A1)
+
+**Failure Classification Logic:**
+- **Relevant Failure**: Fault within design/environmental specification limits; improper operation due to contractor documentation; transient failures including No Fault Found (if attributable to rolling stock per Engineer's opinion)
+- **Non-Relevant Failure**: Caused by non-contractor equipment; human error (except documentation-related); accidents not associated with normal operation; operation outside design/environmental limits
+- **Service Failure**: Relevant failure(s) during revenue service causing: (a) Non-availability to start revenue service after pre-departure checkout, (b) Withdrawal from revenue service, (c) Delay ≥3 minutes
+
+**Availability Calculation:**
+```
+Percentage Availability = [1 - (DT(OPM) + DT(CM)) / Total Time] × 100
+```
+Where:
+- Total Time = Assessment period hours × Number of commissioned trains
+- DT(OPM) = Down Time due to Other Preventive Maintenance (hours) - Total downtime for PM other than service checks, counted from train becoming unfit for service or work start (whichever earlier) to restoration to service condition, including withdrawal/return time if applicable
+- DT(CM) = Down Time due to Corrective Maintenance (hours) - Total downtime for corrective maintenance, counted from train becoming unfit for service or work start (whichever earlier) to restoration to service condition, including return to revenue service time if applicable, excluding unreasonable delays not attributable to rolling stock
+- Target: ≥95%
+- Assessment: After 18 months from start of revenue operation, calculated monthly over preceding 6 months
+- Stabilization Period: 6 months after putting train into revenue service before counting for reliability calculations
+
+**MDBF (Mean Distance Between Failure):**
+```
+MDBF = Total Operating Distance of Available Fleet / Total Number of Service Failures
+```
+- Target for 6-Car Fleet:
+  - After 6 months of revenue service: ≥60,000 km
+  - After 12 months of revenue service: ≥100,000 km
+- Calculation based on Service Failures only (relevant failures causing non-availability, withdrawal, or delay ≥3 minutes)
+
+**MDBCF (Mean Distance Between Component Failures):**
+```
+MDBCF = Total Operating Distance of Fleet / Total Service Failures of Identical Items
+```
+- System-specific targets (Unit: 3-car train-km):
+  - Propulsion System: 500,000 km
+    - Shoe collectors: 5,300,000 km
+    - HSCB and Earthing Switch: 1,350,000 km
+    - Traction Inverter: 1,350,000 km
+    - Traction Motor: 7,450,000 km
+  - Auxiliary Supply System: 1,050,000 km
+    - Auxiliary Converter: 1,800,000 km
+    - Battery Charger: 3,400,000 km
+    - Back-up Battery: 8,950,000 km
+  - Air Supply and Friction Brake Equipment: 700,000 km
+  - Door System and Controls: 1,000,000 km
+  - VAC System: 800,000 km
+  - Communication System: 1,450,000 km
+  - Couplers and Draft Gear: 6,952,000 km
+    - Automatic Couplers: 12,400,000 km
+    - Semi Permanent Coupler: 15,900,000 km
+  - Bogies: 3,650,000 km
+    - Drive gear and coupling: 8,300,000 km
+    - Primary Suspension: 12,500,000 km
+    - Secondary Suspension: 13,600,000 km
+  - Lighting System: 7,450,000 km
+  - TCMS: 2,500,000 km
+
+**MTTR (Mean Time To Repair):**
+```
+MTTR = Cumulative Time (including access time) / Total Number of Relevant Failures
+```
+- System-specific targets (Unit: Hours):
+  - Propulsion System: 2.5 hours
+    - Third rail current collector: 1.5 hours
+    - HSCB and Earthing Switch: 2.5 hours
+    - Power converter - Inverter: 3.0 hours
+    - Traction Motor: 3.0 hours
+  - Auxiliary Supply System: 1.7 hours
+    - Auxiliary Converter: 2.0 hours
+    - Battery Charger: 2.0 hours
+    - Back-up Battery: 1.0 hour
+  - Air Supply and Friction Brake Equipment: 2.0 hours
+  - Door System and Controls: 1.2 hours
+  - VAC System: 1.5 hours
+  - Communication System: 1.2 hours
+  - Couplers and Draft Gear: 2.2 hours
+    - Automatic Couplers: 2.2 hours
+    - Semi Permanent Coupler: 2.0 hours
+  - Bogies: 2.0 hours
+    - Drive gear and coupling: 2.0 hours
+    - Primary Suspension: 2.0 hours
+    - Mechanical Parts & Components: 2.0 hours
+    - Secondary Suspension: 2.0 hours
+  - Lighting System: 1.0 hour
+  - TCMS: 1.5 hours
+  - Gangway: 1.0 hour
+- LRU replacement target: <30 minutes
+
+**Pattern Failure Identification:**
+A pattern failure occurs when (as per RAMS Plan Section 19.2.6(iv)):
+- 3 or more relevant service failures of same replaceable part/item/equipment occur in same manner in identical or equivalent applications at rate ≥20% higher than predicted failure rate, OR
+- ≥20% of same replaceable part/item/equipment in fleet has relevant failure in same manner during 18-month moving window (from reliability demonstration start to end of Defect Liability Period)
+- Identification logic: Track component-level failures (not system-level), compare actual failure rate vs predicted rate, flag items meeting either criterion above
+
+#### 2.5.2 Report Generation
+- **Availability Report**: Calculate based on DT(OPM) and DT(CM) extracted from job cards (Duration of Repair field, CM/PM/OPM classification), apply formula per Section 8.2, display monthly trend over preceding 6 months, highlight if <95%
+- **MDBF Report**: Fleet-level calculation using total KM from Fleet Management module / total Service Failures from job cards (where Withdraw=Yes OR Delay=Yes with Delay≥3min OR Effects on Train Service=Yes), compare against targets (60,000 km @ 6 months, 100,000 km @ 12 months)
+- **MDBCF Report**: Component-level calculation by system, using total fleet KM / service failures of identical items, compare against Table 2 targets, display per system/equipment hierarchy
+- **MTTR Report**: Calculate per system/equipment using sum of Duration of Repair (hr) / count of relevant failures, compare against Table 3 targets, highlight items exceeding target MTTR
+- **Pattern Failure Report**: Identify components with ≥3 failures in same manner, calculate actual failure rate, compare with predicted rate (from Reliability Prediction data), flag items with rate ≥20% higher OR ≥20% fleet penetration in 18-month window, display clickable list with full job card details
+- **Monthly Reliability Demonstration Report**: Comprehensive report covering MDBF, MDBCF, MTTR, Availability, Pattern Failures, corrective actions taken, submitted to Engineer monthly
+
+#### 2.5.3 Report Filters
+- By TrainSet (TS01-TS17)
+- By Train Number (MR601-MR617)
+- By Month
+- By Date Range (From-To)
+- By System
+- By Depot
+- By Failure Category
+- By Maintenance Type (CM/PM/OPM)
+
+#### 2.5.4 Report Export
+- Export formats: Excel/PDF
+- Include summary charts
+- Include tabular data
+- Include attached photos as download links in Excel
+
+### 2.6 Vendor Management Module
+
+#### 2.6.1 Vendor Master Form
+Fields:
+- Vendor Name
+- Vendor Code
+- Vendor Address
+- Contact Person
+- Contact Number
+- Email Address
+- GST Number
+- Related System/Sub-System
+- Contract Status (Active/Inactive)
+- Specialization Area
+- Remarks
+
+#### 2.6.2 Pre-loaded Vendor List
+Import 31 approved vendors from KMRC RS(3R) Vendor Details:
+1. Televic Rail, Belgium (Communication system)
+2. AMCO Saft India Pvt Ltd, Bangalore (Battery)
+3. Huber Suhner AG, Switzerland (Cables)
+4. Voith, Germany (Gear Box with Axle)
+5. Bonatrans, India (Trailing & Driving Wheelset)
+6. MTC, Bangalore (Conical Rubber Spring)
+7. Sumitomo Electric Industries, Japan (Air Spring)
+8. Knorr Bremse India (Brake System, Saloon Door System)
+9. Faiveley, India (Couplers, VAC System)
+10. Gerflor France (Rubber Floor Covering)
+11. Stemmann Technik, Germany (Third Rail Current Collection Device, Ground Contact Assembly)
+12. Hubner, Germany (Gangway Assembly)
+13. Asahi India Glass Ltd, Gurgaon (Windshield Glass)
+14. Milwaukee Composites Inc (Floor Board)
+15. Hankurk Fibre Co. Ltd., Korea (Saloon Interior Panel and Accessories)
+16. Technoware, Finland (Interior Lights)
+17. Mafelec, France (Exterior Lights)
+18. ITT Holdings, Czech Republic (Lateral and Vertical Damper)
+19. Getzner Werkstoffe Gmbh Austria (Floor Cushion Rubber)
+20. Impact Safety Glass (Window Glass and Draught Screen Glass)
+21. Melco Japan (High Voltage Equipment, Propulsion System, APS, TMS)
+22. Siechem Technologies Pvt Ltd, Chennai (Fire Survival Cables)
+23. Presston Engineering Corporation (Saloon Seat)
+24. SEMA Systems/Ambro Asia (Fire Detection System)
+25. Sarita Forgings (Anti Roll Bar)
+26. Amphenol (EDB Panel, Junction Box and Jumper plugs)
+27. River Engg (EDB Panel)
+28. Fluid Controls Pvt Ltd (Brake System End Fittings)
+29. Valdel Industries Pvt Ltd Bangalore (Cab Side Door & Saloon to Cab Partition Door)
+
+#### 2.6.3 Vendor Dashboard
+- Display all vendor details
+- Sync with Google Sheet (Vendor List)
+- Add/Edit/Delete by Depot Incharge only
+- Search by vendor name/system/contact
+
+### 2.7 Letter Management Module
+
+#### 2.7.1 Letter Entry Form
+Fields:
+- Letter Type (Dropdown: Incoming/Outgoing)
+- Letter Number
+- Date
+- Subject
+- Issued By / Received From
+- Attach Letter (Multiple file upload: PDF/DOC/JPG)
+- Remarks
+
+#### 2.7.2 Letter Dashboard
+- View/Edit/Download letters
+- Search by Letter No./Date/Subject
+- Access: Depot Incharge, Engineers, Data Entry Operators
+
+### 2.8 Maintenance Schedule Module
+
+#### 2.8.1 Schedule Entry Form
+- Maintenance Type (PM/OPM)
+- Service Check Type (A/B1/B4/B8/C1/C2/C5)
+- TrainSet/Car assignment
+- Scheduled Date/Time
+- Assigned To (Engineer/Team)
+- Expected Duration
+- Status tracking
+
+### 2.9 Document Repository Module
+
+#### 2.9.1 Upload Documents
+- Document Title
+- Document Type (Dropdown: Manual/Policy/Study Material/Photo/Schematic/Other)
+- Tags (Optional)
+- Multiple file upload
+- Upload/Search/View/Download functionality
+- Access: Depot Incharge, Engineers, Data Entry Operators
+
+### 2.10 Metro Project Dashboard
+
+#### 2.10.1 Project Overview
+- Auto-fetch latest news and updates from:
+  - Official Metro Rail websites
+  - Public metro information sources
+- Update frequency: Every 2 hours
+- Display per project (DMRC, BMRCL, KMRCL, MMRCL):
+  - Ongoing Projects
+  - Under Construction status
+  - Project Map/Location
+  - Expected Commissioning Date
+  - Latest News Snippets
+- Click project to view full history and updates
+
+### 2.11 Data Export Dashboard
+
+#### 2.11.1 Export Functionality
+- Export any table to PDF/Excel:
+  - Job Card
+  - NCR
+  - Maintenance Schedule
+  - Vendor List
+  - Inventory
+  - Attendance Log
+- Search filters + Date Range selection before export
+- Include summary charts, tabular data, photo download links
+
+### 2.12 Advanced Search & Analytics
+
+#### 2.12.1 Job Card Search
+- Search by Equipment/Component/TrainSet
+- Display total failures, failure rates, related job cards
+- Click bar chart to open full job card list for that item
+- Example: Search Pantograph → Show total pantograph failures + all related job cards
+
+#### 2.12.2 NCR Search
+- Similar advanced search as Job Card
+- Filter by Status/Vendor/System/Train No.
+
+#### 2.12.3 Pattern Failure Analysis
+- Identify components (not systems) with ≥3 failures in same manner
+- Calculate actual failure rate vs predicted rate from Reliability Prediction data
+- Highlight items meeting either criterion: (a) Rate ≥20% higher than predicted, OR (b) ≥20% fleet penetration in 18-month moving window
+- Clickable items to view all related job cards with full details
+- Display failure count, failure rate, predicted rate, deviation percentage
+
+## 3. Data Integration & Synchronization
+
+### 3.1 Google Sheets Integration
+- Auto-sync every 2 hours
+- Sheets to sync:
+  - M&P Master List
+  - Spare Parts List
+  - Job Card Details
+  - Vendor List
+  - Location List
+  - NCR List
+- Configuration: Google Sheet ID, Sheet Name, API Key
+
+### 3.2 Google Drive Backup
+- Daily automatic backup
+- Store uploaded documents, generated reports
+- Configuration: Google Drive Folder ID
+
+### 3.3 Database Structure
+- Primary database: MySQL or PostgreSQL
+- Tables: Users, JobCards, NCRs, Vendors, Maintenance, Letters, Documents, FleetKM, Systems, Components, FailureRates (for predicted rates)
+- Relationships: JobCard ↔ NCR (many-to-many via TrainSet/Car/Item/Serial matching), JobCard ↔ Vendor, Component ↔ System
+
+## 4. Technical Architecture
+
+### 4.1 Frontend
+- Framework: React + TailwindCSS
+- UI Components: Shadcn
+- Design: 3D dynamic effects, glassmorphism
+- Responsive: Mobile + Desktop optimized
+
+### 4.2 Backend
+- Framework: Node.js + Express.js
+- Authentication: JWT token-based
+- API: RESTful, modular, documented
+- File handling: Multer for uploads
+
+### 4.3 Advanced Features
+- Gemini API integration for intelligent search
+- LangChain for document processing
+- LlamaIndex for data indexing
+- Multi-agent RAG system for job card analysis
+- Automated report generation with AI insights
+
+### 4.4 Deployment
+- Platform: Render/Firebase/Supabase
+- Environment variables:
+  - DB_HOST, DB_USER, DB_PASS, DB_NAME
+  - GOOGLE_SHEET_ID, GOOGLE_DRIVE_FOLDER_ID, GOOGLE_API_KEY
+  - JWT_SECRET
+  - CRON_BACKUP_TIME
+  - GEMINI_API_KEY
+
+### 4.5 Scheduled Tasks
+- Google Sheets sync: Every 2 hours
+- Google Drive backup: Daily
+- Metro project updates: Every 2 hours
+- RAMS calculation refresh: Real-time on data change
+
+## 5. System Configuration Data
+
+### 5.1 Depot List
+- KMRCL
+- BMRCL
+- DMRCL
+- MMRCL
+
+### 5.2 System List
+- General
+- Traction
+- Brake
+- Door
+- AC
+- Bogie
+- TIMS
+- Communication
+- Fire Detection
+- Vehicle Control
+- Aux Electric
+- Lightning
+- Gangway
+
+### 5.3 TrainSet List
+TS01, TS02, TS03, TS04, TS05, TS06, TS07, TS08, TS09, TS10, TS11, TS12, TS13, TS14, TS15, TS16, TS17
+
+### 5.4 Train Number List
+MR601, MR602, MR603, MR604, MR605, MR606, MR607, MR608, MR609, MR610, MR611, MR612, MR613, MR614, MR615, MR616, MR617
+
+### 5.5 Car List
+- ALL CARS
+- DMC1
+- TC1
+- MC1
+- MC2
+- TC2
+- DMC2
+
+## 6. RAMS Compliance Requirements (Per RAMS Plan DRCA No. RS(3R)/PP/F/B864/A1)
+
+### 6.1 Reliability Targets
+- Fleet MDBF: 60,000 km (6 months), 100,000 km (12 months) for 6-car fleet
+- Component MDBCF: As per Table 2 in Section 2.5.1
+- Demonstration period: 6 months stabilization + monitoring until end of Defect Liability Period
+- Monitoring scope: All relevant failures during revenue service, simulated revenue operations, pre-departure checkouts
+
+### 6.2 Availability Target
+- Minimum 95% availability
+- Assessment: After 18 months from start of revenue operation, calculated monthly over preceding 6 months
+- Formula: [1 - (DT(OPM) + DT(CM)) / Total Time] × 100
+- Corrective action: If target not achieved, continue monthly assessment until achieved; contractor takes necessary action at own expense
+
+### 6.3 Maintainability Targets
+- LRU replacement: <30 minutes
+- System-specific MTTR as per Table 3 in Section 2.5.1
+- Maintainability demonstration: Complete within 6 months after delivery of first train
+
+### 6.4 Pattern Failure Criteria
+- ≥3 relevant service failures of same part in same manner
+- Failure rate ≥20% higher than predicted, OR
+- ≥20% of fleet has same failure during 18-month window
+- Corrective action: Design change or software modification at contractor's expense
+
+## 7. Failure Classification (Per RAMS Plan Section 7.2)
+
+### 7.1 Relevant Failure
+- Fault within design/environmental specification limits
+- Improper operation due to contractor-supplied documentation
+- Transient failures including No Fault Found (if attributable to rolling stock per Engineer's opinion)
+
+### 7.2 Non-Relevant Failure
+- Caused by non-contractor equipment malfunction
+- Human error (except documentation-related)
+- Accidents not associated with normal operation
+- Operation outside design/environmental limits
+
+### 7.3 Service Failure
+Relevant failure(s) during revenue service causing:
+- Non-availability to start revenue service after pre-departure checkout
+- Withdrawal from revenue service
+- Delay ≥3 minutes from schedule/timetable at destination station for one-way trip
+
+## 8. Additional Features
+
+### 8.1 Activity Log
+- Track all user actions
+- Click any log entry to view full details
+- Filter by user/date/action type
+
+### 8.2 Task Assignment
+- Assign maintenance tasks to engineers/teams
+- Track task status and completion
+- Hierarchy: Depot Incharge → Engineer → Technician
+
+### 8.3 Inventory Management
+- Spare parts tracking
+- Stock levels and alerts
+- Sync with Google Sheets
+
+### 8.4 Attendance Log
+- Staff attendance tracking
+- Export to Excel/PDF
+
+## 9. UI/UX Requirements
+
+### 9.1 Design Principles
+- Modern 3D dynamic interface
+- Glassmorphism effects
+- Consistent BEML branding
+- Intuitive navigation
+- Mobile-first responsive design
+
+### 9.2 BEML Logo Integration
+- Display on all exported documents (Job Card, NCR, reports)
+- SVG format as provided
+- Consistent placement and sizing
+
+## 10. Data Security & Backup
+
+### 10.1 Authentication
+- JWT token-based authentication
+- Secure password storage (bcrypt hashing)
+- Session management
+
+### 10.2 Backup Strategy
+- Daily Google Drive backup
+- Database backup via cron job
+- Export functionality for manual backup
+
+## 11. Performance Requirements
+
+### 11.1 Response Time
+- Page load: <2 seconds
+- Search results: <1 second
+- Report generation: <5 seconds
+- File upload: Progress indicator
+
+### 11.2 Scalability
+- Support 17 trainsets
+- Handle 10,000+ job cards
+- Concurrent users: 50+
+
+## 12. Compliance & Standards
+
+### 12.1 RAMS Standards
+- EN 50126:1999 compliance (Railway applications – Specification and demonstration of RAMS)
+- IEC 60300-1, IEC 60300-2, IEC 60300-3-5, IEC 60571 guidelines for electronic equipment
+- KMRC RS(3R) RAMS Plan (DRCA No. RS(3R)/PP/F/B864/A1, Doc No. GR/TD/3457, Rev. 1, Date 21.12.2019)
+- KMRC Employer's Requirements: General Specification & Technical Specification
+
+### 12.2 Documentation
+- Operation and Maintenance Manual (per ERGS Chapter 6)
+- FRACAS System documentation
+- API documentation
+- User training materials
+- Monthly Reliability Demonstration Reports
+- Hazard Analysis Report (Doc No. GR/TD/3619)
+- System Safety Assurance Management Plan (Doc No. GR/TD/3280)
+
+## 13. Implementation Notes
+
+### 13.1 Development Approach
+- Modular architecture
+- Separate frontend and backend codebases
+- API-first design
+- Comprehensive error handling
+
+### 13.2 Testing Requirements
+- Unit testing for all calculation functions (validate against RAMS Plan formulas)
+- Integration testing for module interactions
+- User acceptance testing with sample data
+- Performance testing under load
+- RAMS calculation accuracy verification against manual calculations
+
+### 13.3 Migration & Data Import
+- Import existing job cards with all historical data
+- Import NCR records
+- Import vendor list
+- Validate all imported data
+- Remove placeholder data, use only imported real data
+
+## 14. RAMS Calculation Implementation Details
+
+### 14.1 Data Collection from Job Cards
+- Extract for Availability calculation:
+  - Duration of Repair (hr) field
+  - CM/PM/OPM classification
+  - Job Card Issued Date/Time
+  - Job Card Close Date/Time
+  - Calculate downtime = Close DateTime - Issued DateTime
+  - Categorize as DT(CM) if CM, DT(OPM) if OPM
+  - Exclude PM service checks from DT(OPM)
+
+- Extract for MDBF calculation:
+  - Train Odometer Reading Data (kms)
+  - Service Failure flag: Withdraw=Yes OR (Delay=Yes AND Delay Time≥3min) OR Effects on Train Service=Yes
+  - Count only Service Failures for denominator
+
+- Extract for MDBCF calculation:
+  - Component/Equipment/Part(s) fields
+  - Train Odometer Reading Data (kms)
+  - Service Failure flag (same as MDBF)
+  - Group by identical items (Component + Equipment + System)
+
+- Extract for MTTR calculation:
+  - Duration of Repair (hr) field
+  - System/Sub-System/Equipment fields
+  - Relevant Failure flag (exclude Non-Relevant per Section 7.2)
+
+- Extract for Pattern Failure:
+  - Component/Equipment/Part(s) fields
+  - Failure Name field
+  - Count failures per identical item in same manner
+  - Compare with predicted failure rate (from Reliability Prediction database)
+  - Calculate fleet penetration percentage
+
+### 14.2 Calculation Triggers
+- Real-time recalculation when:
+  - New job card added/updated
+  - Job card closed
+  - KM data updated
+  - Assessment period changed
+- Monthly automated report generation
+
+### 14.3 Predicted Failure Rate Database
+- Store predicted failure rates for all components/systems from Reliability Apportionment and Prediction Report
+- Use for Pattern Failure comparison
+- Update when design changes occur
+
+## 15. Success Criteria
+
+### 15.1 Functional Success
+- All 27 feature points fully implemented
+- RAMS calculations match RAMS Plan formulas exactly
+- Availability calculation uses correct DT(OPM) and DT(CM) definitions
+- MDBF/MDBCF calculations use Service Failures only (not all relevant failures)
+- Pattern Failure identifies component-level (not system-level) failures meeting criteria
+- Job Card and NCR formats exactly match provided templates with BEML logo
+- All import/export functions working correctly
+
+### 15.2 Performance Success
+- 95% system uptime
+- <2 second average response time
+- Zero data loss
+- Successful daily backups
+
+### 15.3 User Acceptance
+- Intuitive UI requiring minimal training
+- Accurate RAMS reports validated against RAMS Plan requirements
+- Efficient job card and NCR workflows
+- Reliable data synchronization
+
+## 16. Reference Documents
+
+### 16.1 Primary References
+1. KMRC RS(3R) RAMS Plan - DRCA No. RS(3R)/PP/F/B864/A1, Doc No. GR/TD/3457, Rev. 1, Date 21.12.2019
+2. EN 50126:1999 - Railway applications – Specification and demonstration of RAMS
+3. KMRC Employer's Requirements: General Specification
+4. KMRC Employer's Requirements: Technical Specification (Chapter 19: RAMS)
+5. IEC 60300-1, IEC 60300-2, IEC 60300-3-5, IEC 60571
+
+### 16.2 Related Documents
+- System Safety Assurance Management Plan (Doc No. GR/TD/3280, DRCA No. RS(3R)/PP/P/B857/A1)
+- Safety Analysis Report (Doc No. GR/TD/3622, DRCA No. RS(3R)/SA/F/B005/--)
+- Hazard Analysis Report (Doc No. GR/TD/3619)
+- Fire Safety Analysis Report (Doc No. GR/TD/3620)
+- O&M Manuals (Letter No. BEML/RS(3R)/PM/Design/19/835, Volume III, dated 03.04.2019)
+
+## 17. Critical Implementation Notes
+
+### 17.1 RAMS Calculation Accuracy
+- All calculations must strictly follow RAMS Plan document definitions
+- Availability: Use DT(OPM) and DT(CM) as defined in Section 19.4.1, not simple downtime sum
+- MDBF: Use Service Failures only (withdrawal/delay≥3min/non-availability), not all relevant failures
+- MDBCF: Calculate per identical item population, not per system
+- Pattern Failure: Identify at component level with rate comparison, not system level
+- MTTR: Include access time, calculate per system/equipment per Table 3
+
+### 17.2 Data Integrity
+- Job Card and NCR auto-sync based on exact match of TrainSet + Car + Item Name + Serial No. (optional)
+- KM data consistency: Use Train Odometer Reading from job cards, supplement with manual daily entry
+- Failure classification: Implement logic to distinguish Relevant/Non-Relevant/Service Failures per definitions
+
+### 17.3 Compliance Validation
+- Validate all calculations against RAMS Plan Annexures
+- Monthly Reliability Demonstration Report format per FRACAS procedure (Figure 5)
+- 6-month stabilization period before counting train for reliability calculations
+- 18-month assessment window for availability (after first train revenue operation start)
+
+### 17.4 User Experience
+- Login dropdown shows Name, user fills Password
+- Dynamic dropdowns: System → Sub-System → Equipment → Component
+- Conditional fields based on CM/PM/OPM selection
+- Single-click export with BEML logo on all documents
+- Pattern Failure items clickable to view all related job cards

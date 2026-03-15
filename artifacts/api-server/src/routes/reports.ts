@@ -4,12 +4,67 @@ import { gte, lte, and, sql, eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-const MDBF_TARGET = 30000;   // km per RAMS plan GR-TD-3457
-const MDBCF_TARGET = 50000;  // km per RAMS plan
-const MTTR_TARGET = 240;     // minutes (4 hours) per RAMS plan
-const AVAILABILITY_TARGET = 0.95; // 95%
-const HOURS_PER_DAY = 20;    // KMRC metro operating hours per day
+// Per RAMS Plan DRCA No. RS(3R)/PP/F/B864/A1 targets
+const MDBF_TARGET_6MO = 60000;   // km — 6-car fleet, after 6 months revenue service
+const MDBF_TARGET_12MO = 100000; // km — 6-car fleet, after 12 months revenue service
+const MDBF_TARGET = 60000;       // Use 6-month target as the primary target
+const MTTR_TARGET = 240;         // minutes overall; per-system targets in MTTR_TARGETS_MIN
+const AVAILABILITY_TARGET = 0.95;
+const HOURS_PER_DAY = 20;
 const PATTERN_WINDOW_MONTHS = 18;
+const TOTAL_FLEET_TRAINS = 14;   // TS01–TS14 active trainsets
+
+// MDBCF targets (km) per system per RAMS Plan Table 2 (3-car train-km)
+const MDBCF_TARGETS: Record<string, number> = {
+  "Traction":         500000,
+  "Traction System":  500000,
+  "Brake":            700000,
+  "Brake System":     700000,
+  "Door":             1000000,
+  "Door System":      1000000,
+  "AC":               800000,
+  "VAC":              800000,
+  "Air Conditioning System": 800000,
+  "Bogie":            3650000,
+  "Bogie & Suspension": 3650000,
+  "Communication System": 1450000,
+  "PAPIS":            1450000,
+  "Fire Detection System": 1450000,
+  "TCMS":             2500000,
+  "Train Integrated Management System": 2500000,
+  "Auxiliary Electric System": 1050000,
+  "Aux Electric":     1050000,
+  "Lighting":         7450000,
+  "Gangway":          6952000,
+  "Vehicle Control":  2500000,
+  "Vehicle Control System": 2500000,
+};
+
+// MTTR targets per system (minutes) per RAMS Plan Table 3
+const MTTR_TARGETS_MIN: Record<string, number> = {
+  "Traction":         150, // 2.5 hr
+  "Traction System":  150,
+  "Brake":            120, // 2.0 hr
+  "Brake System":     120,
+  "Door":             72,  // 1.2 hr
+  "Door System":      72,
+  "AC":               90,  // 1.5 hr
+  "VAC":              90,
+  "Air Conditioning System": 90,
+  "Communication System": 72, // 1.2 hr
+  "PAPIS":            72,
+  "Fire Detection System": 72,
+  "Bogie":            120, // 2.0 hr
+  "Bogie & Suspension": 120,
+  "TCMS":             90,  // 1.5 hr
+  "Train Integrated Management System": 90,
+  "Aux Electric":     102, // 1.7 hr
+  "Auxiliary Electric System": 102,
+  "Lighting":         60,  // 1.0 hr
+  "Gangway":          60,
+  "Vehicle Control":  90,
+  "Vehicle Control System": 90,
+};
 
 function buildDateFilter(startDate?: string, endDate?: string) {
   const conditions = [];
@@ -18,10 +73,6 @@ function buildDateFilter(startDate?: string, endDate?: string) {
   return conditions;
 }
 
-/**
- * Get fleet distance using SQL max-odometer-per-trainset approach
- * This is the most accurate method using real job card odometer readings
- */
 async function getFleetDistance(): Promise<number> {
   const result = await db.execute(sql`
     SELECT COALESCE(SUM(max_km), 0)::float as total
@@ -38,15 +89,9 @@ async function getFleetDistance(): Promise<number> {
 }
 
 /**
- * Service failure per RAMS specification (BEML KMRC):
- * A failure is service-affecting if:
- *   - withdrawal_required = TRUE (train withdrawn from service)
- *   - OR delay = TRUE (any recorded service delay — checkbox marked)
- *   - OR delay_minutes >= 3 (explicit 3+ minute delay where duration known)
- *
- * Note: BEML KMRC CSV uses "_" checkbox for delay field. When delay=true and
- * delay_minutes is null, the delay still counts as a service failure since
- * any delay recorded in Part D of the job card is ≥3 min per KMRC SLA.
+ * Service failure per RAMS Plan Section 7.3:
+ * Relevant failure causing: withdrawal, or delay ≥3 minutes
+ * BEML CSV uses "_" checkbox marker for withdrawal/delay flags.
  */
 function isServiceFailure(f: any): boolean {
   return f.withdrawalRequired === true ||
@@ -54,14 +99,11 @@ function isServiceFailure(f: any): boolean {
          (f.delayMinutes != null && Number(f.delayMinutes) >= 3);
 }
 
-// MDBF Report
-// MDBF = Fleet Distance / Service Failures
-// Service failure = Withdraw=YES OR Delay >= 3 minutes (per RAMS plan)
+// ─── MDBF ────────────────────────────────────────────────────────────────────
 router.get("/reports/mdbf", async (req, res) => {
   try {
     const { startDate, endDate } = req.query as Record<string, string>;
     const conditions = buildDateFilter(startDate, endDate);
-
     const allJobCards = await db.select().from(failuresTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
@@ -69,7 +111,7 @@ router.get("/reports/mdbf", async (req, res) => {
     const serviceFailures = allJobCards.filter(isServiceFailure);
     const mdbf = serviceFailures.length > 0 ? totalFleetDistance / serviceFailures.length : totalFleetDistance;
 
-    // By train set
+    // Per-train breakdown
     const trainFailures: Record<string, number> = {};
     const trainDistances: Record<string, number> = {};
     for (const f of allJobCards) {
@@ -81,18 +123,20 @@ router.get("/reports/mdbf", async (req, res) => {
       }
       if (isServiceFailure(f)) trainFailures[ts] = (trainFailures[ts] || 0) + 1;
     }
-
     const byTrain = Object.keys(trainDistances).sort().map(ts => ({
       trainNumber: ts,
       distance: trainDistances[ts] || 0,
       serviceFailures: trainFailures[ts] || 0,
-      mdbf: (trainFailures[ts] || 0) > 0 ? (trainDistances[ts] || 0) / trainFailures[ts] : trainDistances[ts] || 0,
+      mdbf: (trainFailures[ts] || 0) > 0
+        ? Math.round((trainDistances[ts] || 0) / trainFailures[ts])
+        : trainDistances[ts] || 0,
     }));
 
     // Monthly trend
     const monthlyMap: Record<string, { failures: number }> = {};
     for (const f of serviceFailures) {
-      const month = f.failureDate.substring(0, 7);
+      const month = (f.failureDate || "").substring(0, 7);
+      if (!month) continue;
       if (!monthlyMap[month]) monthlyMap[month] = { failures: 0 };
       monthlyMap[month].failures++;
     }
@@ -101,17 +145,19 @@ router.get("/reports/mdbf", async (req, res) => {
       .map(([period, data]) => ({
         period,
         failures: data.failures,
-        mdbf: data.failures > 0 ? totalFleetDistance / serviceFailures.length : 0,
+        mdbf: data.failures > 0 ? Math.round(totalFleetDistance / serviceFailures.length) : 0,
       }));
 
     res.json({
       totalFleetDistance,
       totalServiceFailures: serviceFailures.length,
-      mdbf,
+      mdbf: Math.round(mdbf),
       target: MDBF_TARGET,
+      target6mo: MDBF_TARGET_6MO,
+      target12mo: MDBF_TARGET_12MO,
       compliance: mdbf >= MDBF_TARGET,
       withdrawalCount: allJobCards.filter(f => f.withdrawalRequired).length,
-      delayCount: allJobCards.filter(f => f.delayMinutes != null && Number(f.delayMinutes) >= 3).length,
+      delayCount: allJobCards.filter(f => f.delay === true || (f.delayMinutes != null && Number(f.delayMinutes) >= 3)).length,
       byTrain,
       trend,
     });
@@ -121,62 +167,108 @@ router.get("/reports/mdbf", async (req, res) => {
   }
 });
 
-// MDBCF Report
-// MDBCF = Fleet Distance * Component Population / Component Failures
-// Component failures = all CM (corrective maintenance) job cards
+// ─── MDBCF ───────────────────────────────────────────────────────────────────
+// MDBCF = Total Fleet Distance / Service Failures of identical items
+// Grouped by system (component level = subsystem_name)
 router.get("/reports/mdbcf", async (req, res) => {
   try {
     const { startDate, endDate } = req.query as Record<string, string>;
     const conditions = buildDateFilter(startDate, endDate);
-
     const allJobCards = await db.select().from(failuresTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
     const totalFleetDistance = await getFleetDistance();
+    const serviceFailures = allJobCards.filter(isServiceFailure);
 
-    // Component populations per system per trainset
-    const systemPopulations: Record<string, number> = {
-      "General": 1, "Traction System": 2, "Brake System": 4, "Door System": 96,
-      "Air Conditioning System": 12, "Bogie & Suspension": 8,
-      "Train Integrated Management System": 2, "Communication System": 5,
-      "Fire Detection System": 12, "Vehicle Control System": 2,
-      "Auxiliary Electric System": 2, "Lighting System": 6, "Gangway & Coupler": 5,
-    };
+    // Group service failures by systemName
+    const systemMap: Record<string, {
+      systemName: string;
+      serviceFailures: number;
+      totalFailures: number;
+      target: number;
+    }> = {};
 
-    const systemMap: Record<string, { systemName: string; failures: number; population: number }> = {};
     for (const f of allJobCards) {
-      const key = f.systemName || f.systemCode;
+      const key = f.systemName || "General";
       if (!systemMap[key]) {
         systemMap[key] = {
-          systemName: f.systemName,
-          failures: 0,
-          population: systemPopulations[f.systemName] || 1,
+          systemName: key,
+          serviceFailures: 0,
+          totalFailures: 0,
+          target: MDBCF_TARGETS[key] || 500000,
         };
       }
-      systemMap[key].failures++;
+      systemMap[key].totalFailures++;
+      if (isServiceFailure(f)) systemMap[key].serviceFailures++;
     }
 
     const bySystem = Object.entries(systemMap)
-      .map(([systemCode, data]) => ({
-        systemCode,
-        systemName: data.systemName,
-        population: data.population,
-        totalDistance: totalFleetDistance,
-        componentFailures: data.failures,
-        mdbcf: data.failures > 0 ? (totalFleetDistance * data.population) / data.failures : 0,
-      }))
-      .sort((a, b) => b.componentFailures - a.componentFailures);
+      .map(([systemCode, data]) => {
+        const mdbcf = data.serviceFailures > 0
+          ? Math.round(totalFleetDistance / data.serviceFailures)
+          : null;
+        return {
+          systemCode,
+          systemName: data.systemName,
+          totalFailures: data.totalFailures,
+          serviceFailures: data.serviceFailures,
+          mdbcf,
+          target: data.target,
+          compliance: mdbcf != null ? mdbcf >= data.target : true,
+        };
+      })
+      .filter(s => s.totalFailures > 0)
+      .sort((a, b) => b.totalFailures - a.totalFailures);
 
-    const totalCmFailures = allJobCards.filter(f => f.orderType === "CM").length;
-    const overallMdbcf = totalCmFailures > 0 ? totalFleetDistance / totalCmFailures : 0;
+    const totalServiceFailures = serviceFailures.length;
+    const overallMdbcf = totalServiceFailures > 0
+      ? Math.round(totalFleetDistance / totalServiceFailures)
+      : 0;
+
+    // Subsystem-level breakdown (component level per PRD)
+    const subsystemMap: Record<string, {
+      subsystemName: string;
+      systemName: string;
+      serviceFailures: number;
+      totalFailures: number;
+    }> = {};
+    for (const f of allJobCards) {
+      const sub = f.subsystemName && f.subsystemName !== "_" ? f.subsystemName : null;
+      if (!sub) continue;
+      const key = `${f.systemName}|${sub}`;
+      if (!subsystemMap[key]) {
+        subsystemMap[key] = {
+          subsystemName: sub,
+          systemName: f.systemName || "General",
+          serviceFailures: 0,
+          totalFailures: 0,
+        };
+      }
+      subsystemMap[key].totalFailures++;
+      if (isServiceFailure(f)) subsystemMap[key].serviceFailures++;
+    }
+    const bySubsystem = Object.entries(subsystemMap)
+      .map(([key, data]) => ({
+        key,
+        subsystemName: data.subsystemName,
+        systemName: data.systemName,
+        totalFailures: data.totalFailures,
+        serviceFailures: data.serviceFailures,
+        mdbcf: data.serviceFailures > 0
+          ? Math.round(totalFleetDistance / data.serviceFailures)
+          : null,
+      }))
+      .filter(s => s.totalFailures >= 3)
+      .sort((a, b) => b.totalFailures - a.totalFailures);
 
     res.json({
       totalFleetDistance,
-      totalComponentFailures: totalCmFailures,
+      totalServiceFailures,
       mdbcf: overallMdbcf,
-      target: MDBCF_TARGET,
-      compliance: overallMdbcf >= MDBCF_TARGET,
+      target: MDBF_TARGET,
+      compliance: overallMdbcf >= MDBF_TARGET,
       bySystem,
+      bySubsystem,
     });
   } catch (err) {
     console.error(err);
@@ -184,25 +276,33 @@ router.get("/reports/mdbcf", async (req, res) => {
   }
 });
 
-// MTTR Report
-// MTTR = Total Repair Duration / Number of Failures (per system)
+// ─── MTTR ────────────────────────────────────────────────────────────────────
 router.get("/reports/mttr", async (req, res) => {
   try {
     const { startDate, endDate } = req.query as Record<string, string>;
     const conditions = buildDateFilter(startDate, endDate);
-
     const allJobCards = await db.select().from(failuresTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-    const withRepairTime = allJobCards.filter(f => f.repairDurationMinutes != null && f.repairDurationMinutes > 0);
+    const withRepairTime = allJobCards.filter(
+      f => f.repairDurationMinutes != null && f.repairDurationMinutes > 0
+    );
     const totalRepairTime = withRepairTime.reduce((sum, f) => sum + (f.repairDurationMinutes || 0), 0);
     const overallMTTR = withRepairTime.length > 0 ? totalRepairTime / withRepairTime.length : 0;
 
-    // By system
-    const systemMap: Record<string, { systemName: string; repairs: number; totalTime: number }> = {};
+    const systemMap: Record<string, {
+      systemName: string; repairs: number; totalTime: number; target: number;
+    }> = {};
     for (const f of withRepairTime) {
-      const key = f.systemCode || f.systemName;
-      if (!systemMap[key]) systemMap[key] = { systemName: f.systemName, repairs: 0, totalTime: 0 };
+      const key = f.systemName || f.systemCode || "General";
+      if (!systemMap[key]) {
+        systemMap[key] = {
+          systemName: key,
+          repairs: 0,
+          totalTime: 0,
+          target: MTTR_TARGETS_MIN[key] || MTTR_TARGET,
+        };
+      }
       systemMap[key].repairs++;
       systemMap[key].totalTime += f.repairDurationMinutes || 0;
     }
@@ -213,108 +313,142 @@ router.get("/reports/mttr", async (req, res) => {
         systemName: data.systemName,
         totalRepairs: data.repairs,
         totalRepairTime: data.totalTime,
-        mttr: data.repairs > 0 ? data.totalTime / data.repairs : 0,
+        mttr: data.repairs > 0 ? Math.round(data.totalTime / data.repairs) : 0,
+        target: data.target,
+        compliance: data.repairs > 0 ? (data.totalTime / data.repairs) <= data.target : true,
       }))
       .sort((a, b) => b.mttr - a.mttr);
 
     const distribution = [
-      { label: "0-30 min", min: 0, max: 30 },
-      { label: "30-60 min", min: 30, max: 60 },
-      { label: "1-2 hrs", min: 60, max: 120 },
-      { label: "2-4 hrs", min: 120, max: 240 },
-      { label: "4-8 hrs", min: 240, max: 480 },
+      { label: "0–30 min", min: 0, max: 30 },
+      { label: "30–60 min", min: 30, max: 60 },
+      { label: "1–2 hrs", min: 60, max: 120 },
+      { label: "2–4 hrs", min: 120, max: 240 },
+      { label: "4–8 hrs", min: 240, max: 480 },
       { label: ">8 hrs", min: 480, max: Infinity },
     ].map(r => ({
       range: r.label,
-      count: withRepairTime.filter(f => (f.repairDurationMinutes || 0) >= r.min && (f.repairDurationMinutes || 0) < r.max).length,
+      count: withRepairTime.filter(
+        f => (f.repairDurationMinutes || 0) >= r.min && (f.repairDurationMinutes || 0) < r.max
+      ).length,
     }));
 
-    res.json({ overallMTTR, target: MTTR_TARGET, compliance: overallMTTR <= MTTR_TARGET || overallMTTR === 0, bySystem, distribution });
+    res.json({
+      overallMTTR: Math.round(overallMTTR),
+      target: MTTR_TARGET,
+      compliance: overallMTTR <= MTTR_TARGET || overallMTTR === 0,
+      totalRepairs: withRepairTime.length,
+      bySystem,
+      distribution,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to generate MTTR report" });
   }
 });
 
-// Availability Report
-// AVAILABILITY = 1 - (DT(OPM) + DT(CM)) / Total Time
-// Total Time = Assessment Period Hours × Number of trains
-// DT(CM) = Downtime from CM job cards
-// DT(OPM) = Downtime from OPM/PM job cards with repair time recorded
+// ─── AVAILABILITY ─────────────────────────────────────────────────────────────
+// Availability = [1 - (DT(OPM) + DT(CM)) / Total Time] × 100
+// Per RAMS Plan Section 19.4.1
 router.get("/reports/availability", async (req, res) => {
   try {
     const { startDate, endDate } = req.query as Record<string, string>;
     const conditions = buildDateFilter(startDate, endDate);
-
     const allJobCards = await db.select().from(failuresTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
     const allTrains = await db.select().from(trainsTable);
 
-    // Assessment period
     const now = new Date();
-    const start = startDate ? new Date(startDate) : new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
     const end = endDate ? new Date(endDate) : now;
     const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
 
-    // Determine number of active trains (from job cards or trains table)
-    const activeTrainSets = new Set(allJobCards.map(f => f.trainSet).filter(ts => ts && /^TS\d+$/i.test(ts)));
-    const numTrains = Math.max(allTrains.length, activeTrainSets.size, 14);
+    const activeTrainSets = new Set(
+      allJobCards.map(f => f.trainSet).filter(ts => ts && /^TS\d+$/i.test(ts))
+    );
+    const numTrains = Math.max(allTrains.length, activeTrainSets.size, TOTAL_FLEET_TRAINS);
     const totalScheduledHours = numTrains * days * HOURS_PER_DAY;
 
-    // DT(CM) = downtime from CM job cards with repair time
-    const cmJobCards = allJobCards.filter(f => f.orderType === "CM" && f.repairDurationMinutes != null && f.repairDurationMinutes > 0);
-    const dtCmMinutes = cmJobCards.reduce((sum, f) => sum + (f.repairDurationMinutes || 0), 0);
+    // DT(CM) — downtime from Corrective Maintenance job cards with recorded repair time
+    const cmCards = allJobCards.filter(
+      f => f.orderType === "CM" && f.repairDurationMinutes != null && f.repairDurationMinutes > 0
+    );
+    const dtCmMinutes = cmCards.reduce((s, f) => s + (f.repairDurationMinutes || 0), 0);
 
-    // DT(OPM) = downtime from PM/OPM job cards with repair time
-    const opmJobCards = allJobCards.filter(f => (f.orderType === "PM" || f.orderType === "OPM") && f.repairDurationMinutes != null && f.repairDurationMinutes > 0);
-    const dtOpmMinutes = opmJobCards.reduce((sum, f) => sum + (f.repairDurationMinutes || 0), 0);
+    // DT(OPM) — downtime from PM/OPM job cards (excluding routine service checks counted as PM)
+    const opmCards = allJobCards.filter(
+      f => (f.orderType === "PM" || f.orderType === "OPM") &&
+           f.repairDurationMinutes != null && f.repairDurationMinutes > 0
+    );
+    const dtOpmMinutes = opmCards.reduce((s, f) => s + (f.repairDurationMinutes || 0), 0);
 
     const totalDowntimeHours = (dtCmMinutes + dtOpmMinutes) / 60;
     const overallAvailability = totalScheduledHours > 0
       ? Math.max(0, 1 - totalDowntimeHours / totalScheduledHours)
       : 1;
 
-    // By train set
-    const trainDowntime: Record<string, number> = {};
-    for (const f of [...cmJobCards, ...opmJobCards]) {
+    // Per-trainset breakdown
+    const trainDowntime: Record<string, { cm: number; opm: number }> = {};
+    for (const f of [...cmCards, ...opmCards]) {
       const ts = f.trainSet || f.trainId;
-      trainDowntime[ts] = (trainDowntime[ts] || 0) + (f.repairDurationMinutes || 0);
+      if (!ts) continue;
+      if (!trainDowntime[ts]) trainDowntime[ts] = { cm: 0, opm: 0 };
+      if (f.orderType === "CM") trainDowntime[ts].cm += f.repairDurationMinutes || 0;
+      else trainDowntime[ts].opm += f.repairDurationMinutes || 0;
     }
 
     const scheduledHoursPerTrain = days * HOURS_PER_DAY;
     const byTrain = Array.from(activeTrainSets).sort().map(ts => {
-      const downtime = (trainDowntime[ts] || 0) / 60;
+      const dt = trainDowntime[ts] || { cm: 0, opm: 0 };
+      const downtimeH = (dt.cm + dt.opm) / 60;
       return {
         trainNumber: ts,
-        availability: scheduledHoursPerTrain > 0 ? Math.max(0, 1 - downtime / scheduledHoursPerTrain) : 1,
-        downtimeHours: downtime,
+        dtCmHours: parseFloat((dt.cm / 60).toFixed(2)),
+        dtOpmHours: parseFloat((dt.opm / 60).toFixed(2)),
+        downtimeHours: parseFloat(downtimeH.toFixed(2)),
+        availability: parseFloat(
+          Math.max(0, 1 - downtimeH / scheduledHoursPerTrain).toFixed(4)
+        ),
       };
     });
 
     // Monthly trend
-    const monthlyMap: Record<string, number> = {};
-    for (const f of [...cmJobCards, ...opmJobCards]) {
-      const month = f.failureDate.substring(0, 7);
-      monthlyMap[month] = (monthlyMap[month] || 0) + (f.repairDurationMinutes || 0);
+    const monthlyMap: Record<string, { cm: number; opm: number }> = {};
+    for (const f of [...cmCards, ...opmCards]) {
+      const month = (f.failureDate || "").substring(0, 7);
+      if (!month) continue;
+      if (!monthlyMap[month]) monthlyMap[month] = { cm: 0, opm: 0 };
+      if (f.orderType === "CM") monthlyMap[month].cm += f.repairDurationMinutes || 0;
+      else monthlyMap[month].opm += f.repairDurationMinutes || 0;
     }
     const trend = Object.entries(monthlyMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([period, downMinutes]) => ({
-        period,
-        availability: Math.max(0, 1 - downMinutes / (numTrains * HOURS_PER_DAY * 60)),
-      }));
+      .map(([period, dt]) => {
+        const dtH = (dt.cm + dt.opm) / 60;
+        // Scheduled hours for the month: trains × operating hours/day × days in that month
+        const [yr, mo] = period.split("-").map(Number);
+        const daysInMonth = yr && mo ? new Date(yr, mo, 0).getDate() : 30;
+        const scheduledH = numTrains * HOURS_PER_DAY * daysInMonth;
+        return {
+          period,
+          dtHours: parseFloat(dtH.toFixed(2)),
+          availability: parseFloat(Math.max(0, 1 - dtH / scheduledH).toFixed(4)),
+        };
+      });
 
     res.json({
-      overallAvailability,
+      overallAvailability: parseFloat(overallAvailability.toFixed(4)),
       target: AVAILABILITY_TARGET,
       compliance: overallAvailability >= AVAILABILITY_TARGET,
       assessmentDays: days,
       numTrains,
-      totalScheduledHours,
-      dtCmHours: dtCmMinutes / 60,
-      dtOpmHours: dtOpmMinutes / 60,
-      totalDowntimeHours,
+      totalScheduledHours: parseFloat(totalScheduledHours.toFixed(1)),
+      dtCmHours: parseFloat((dtCmMinutes / 60).toFixed(2)),
+      dtOpmHours: parseFloat((dtOpmMinutes / 60).toFixed(2)),
+      totalDowntimeHours: parseFloat(totalDowntimeHours.toFixed(2)),
       byTrain,
       trend,
     });
@@ -324,8 +458,9 @@ router.get("/reports/availability", async (req, res) => {
   }
 });
 
-// Pattern Failure Report
-// Threshold: >= 3 failures OR >= 20% fleet affected
+// ─── PATTERN FAILURES ─────────────────────────────────────────────────────────
+// Component-level: group by subsystem_name (equipment/item level) per PRD Section 19.2.6(iv)
+// Threshold: ≥3 failures of same item/component OR ≥20% fleet penetration
 router.get("/reports/pattern-failures", async (req, res) => {
   try {
     const { windowMonths } = req.query as Record<string, string>;
@@ -339,61 +474,89 @@ router.get("/reports/pattern-failures", async (req, res) => {
       .where(gte(failuresTable.failureDate, windowStartStr));
 
     const allTrains = await db.select().from(trainsTable);
-    const activeTrainSets = new Set(failures.map(f => f.trainSet).filter(ts => ts && /^TS\d+$/i.test(ts)));
-    const totalTrains = Math.max(allTrains.length, activeTrainSets.size, 14);
+    const activeTrainSets = new Set(
+      failures.map(f => f.trainSet).filter(ts => ts && /^TS\d+$/i.test(ts))
+    );
+    const totalTrains = Math.max(allTrains.length, activeTrainSets.size, TOTAL_FLEET_TRAINS);
 
-    // Group by component/system
+    // Group at component/item level using subsystem_name as the component identifier
+    // (equipment column is "_" checkbox in BEML CSV, so subsystem is the lowest useful grouping)
     const componentMap: Record<string, {
-      partNumber: string; partDescription: string; systemCode: string;
-      systemName: string; occurrences: number; trainIds: Set<string>; dates: string[];
+      itemName: string;
+      systemName: string;
+      occurrences: number;
+      serviceFailures: number;
+      trainIds: Set<string>;
+      dates: string[];
+      jobCardIds: string[];
     }> = {};
 
     for (const f of failures) {
-      const key = `${f.partNumber || f.component || f.failureName}|${f.systemCode}`;
-      if (!key.startsWith("|")) {
-        if (!componentMap[key]) {
-          componentMap[key] = {
-            partNumber: f.partNumber || f.component || f.failureName || "Unknown",
-            partDescription: f.partReplaced || f.failureName || f.component || "",
-            systemCode: f.systemCode, systemName: f.systemName,
-            occurrences: 0, trainIds: new Set(), dates: [],
-          };
-        }
-        componentMap[key].occurrences++;
-        if (f.trainSet) componentMap[key].trainIds.add(f.trainSet);
-        componentMap[key].dates.push(f.failureDate);
+      // Use subsystem_name as component key; fall back to system_name if no subsystem
+      const subsystem = f.subsystemName && f.subsystemName !== "_" ? f.subsystemName : null;
+      const itemName = subsystem || f.systemName || "Unknown";
+      const key = `${f.systemName}|${itemName}`;
+
+      if (!componentMap[key]) {
+        componentMap[key] = {
+          itemName,
+          systemName: f.systemName || "General",
+          occurrences: 0,
+          serviceFailures: 0,
+          trainIds: new Set(),
+          dates: [],
+          jobCardIds: [],
+        };
       }
+      componentMap[key].occurrences++;
+      if (isServiceFailure(f)) componentMap[key].serviceFailures++;
+      if (f.trainSet) componentMap[key].trainIds.add(f.trainSet);
+      componentMap[key].dates.push(f.failureDate);
+      componentMap[key].jobCardIds.push(f.jobCardNumber || f.id);
     }
 
-    const patterns = Object.values(componentMap)
-      .filter(p => p.occurrences >= 3)
-      .map(p => {
-        const populationAffected = p.trainIds.size;
-        const percentageAffected = totalTrains > 0 ? (populationAffected / totalTrains) * 100 : 0;
-        const isPattern = p.occurrences >= 3 || percentageAffected >= 20;
+    const patterns = Object.entries(componentMap)
+      .filter(([, p]) => p.occurrences >= 3)
+      .map(([key, p]) => {
+        const trainsAffected = p.trainIds.size;
+        const percentageAffected = totalTrains > 0 ? (trainsAffected / totalTrains) * 100 : 0;
+        const sortedDates = [...p.dates].sort();
+
         let patternType = "";
         if (p.occurrences >= 3 && percentageAffected >= 20) patternType = "Rate & Fleet";
-        else if (p.occurrences >= 3) patternType = "Frequent Failure";
-        else if (percentageAffected >= 20) patternType = "Fleet Affected";
-        const sortedDates = p.dates.sort();
+        else if (percentageAffected >= 20) patternType = "Fleet Affected (≥20%)";
+        else patternType = "Frequent Failure (≥3)";
+
         return {
-          partNumber: p.partNumber, partDescription: p.partDescription,
-          systemCode: p.systemCode, systemName: p.systemName,
-          occurrences: p.occurrences, populationAffected, totalPopulation: totalTrains,
-          percentageAffected, isPattern, patternType,
-          firstOccurrence: sortedDates[0] || "", lastOccurrence: sortedDates[sortedDates.length - 1] || "",
+          key,
+          itemName: p.itemName,
+          systemName: p.systemName,
+          occurrences: p.occurrences,
+          serviceFailures: p.serviceFailures,
+          trainsAffected,
+          totalTrains,
+          percentageAffected: parseFloat(percentageAffected.toFixed(1)),
+          patternType,
+          firstOccurrence: sortedDates[0] || "",
+          lastOccurrence: sortedDates[sortedDates.length - 1] || "",
+          jobCardIds: p.jobCardIds.slice(0, 20),
         };
       })
       .sort((a, b) => b.occurrences - a.occurrences);
 
-    res.json({ windowMonths: months, analysisDate: new Date().toISOString().split("T")[0], patterns });
+    res.json({
+      windowMonths: months,
+      analysisDate: new Date().toISOString().split("T")[0],
+      totalPatterns: patterns.length,
+      patterns,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to generate pattern failure report" });
   }
 });
 
-// Summary Dashboard Report
+// ─── SUMMARY DASHBOARD ───────────────────────────────────────────────────────
 router.get("/reports/summary", async (_req, res) => {
   try {
     const [allFailures, allTrains, distances] = await Promise.all([
@@ -402,7 +565,6 @@ router.get("/reports/summary", async (_req, res) => {
       db.select().from(fleetDistancesTable),
     ]);
 
-    // Fleet distance from real odometer data
     const kmResult = await db.execute(sql`
       SELECT COALESCE(SUM(max_km), 0)::float as total
       FROM (
@@ -421,19 +583,16 @@ router.get("/reports/summary", async (_req, res) => {
       totalFleetDistance = Object.values(dm).reduce((s, d) => s + d, 0);
     }
 
-    // Service failures (per RAMS spec)
     const serviceFailures = allFailures.filter(isServiceFailure);
-    const mdbf = serviceFailures.length > 0 ? totalFleetDistance / serviceFailures.length : 0;
+    const mdbf = serviceFailures.length > 0 ? Math.round(totalFleetDistance / serviceFailures.length) : 0;
 
-    // MTTR
     const withRepair = allFailures.filter(f => f.repairDurationMinutes != null && f.repairDurationMinutes > 0);
     const mttr = withRepair.length > 0
-      ? withRepair.reduce((sum, f) => sum + (f.repairDurationMinutes || 0), 0) / withRepair.length
+      ? Math.round(withRepair.reduce((s, f) => s + (f.repairDurationMinutes || 0), 0) / withRepair.length)
       : 0;
 
-    // Availability per RAMS formula
     const activeTrainSets = new Set(allFailures.map(f => f.trainSet).filter(ts => ts && /^TS\d+$/i.test(ts)));
-    const numTrains = Math.max(allTrains.length, activeTrainSets.size, 14);
+    const numTrains = Math.max(allTrains.length, activeTrainSets.size, TOTAL_FLEET_TRAINS);
     const days = 365;
     const totalScheduledHours = numTrains * days * HOURS_PER_DAY;
     const cmDown = allFailures.filter(f => f.orderType === "CM" && f.repairDurationMinutes != null && f.repairDurationMinutes > 0);
@@ -441,21 +600,18 @@ router.get("/reports/summary", async (_req, res) => {
     const totalDownMinutes = [...cmDown, ...opmDown].reduce((s, f) => s + (f.repairDurationMinutes || 0), 0);
     const availability = totalScheduledHours > 0 ? Math.max(0, 1 - totalDownMinutes / 60 / totalScheduledHours) : 1;
 
-    // Open job cards
     const openJobCards = allFailures.filter(f => f.status === "open" || f.status === "in-progress");
 
-    // Pattern failures
     const windowStart = new Date();
     windowStart.setMonth(windowStart.getMonth() - PATTERN_WINDOW_MONTHS);
     const recentFailures = allFailures.filter(f => f.failureDate >= windowStart.toISOString().split("T")[0]);
-    const partCounts: Record<string, number> = {};
+    const subsystemCounts: Record<string, number> = {};
     for (const f of recentFailures) {
-      const key = f.partNumber || f.component || f.failureName;
-      if (key) partCounts[key] = (partCounts[key] || 0) + 1;
+      const key = `${f.systemName}|${f.subsystemName || f.systemName}`;
+      if (key) subsystemCounts[key] = (subsystemCounts[key] || 0) + 1;
     }
-    const patternFailureCount = Object.values(partCounts).filter(c => c >= 3).length;
+    const patternFailureCount = Object.values(subsystemCounts).filter(c => c >= 3).length;
 
-    // By system
     const systemCounts: Record<string, number> = {};
     for (const f of allFailures) {
       const key = f.systemName || "General";
@@ -465,7 +621,6 @@ router.get("/reports/summary", async (_req, res) => {
       .map(([systemName, count]) => ({ systemName, count }))
       .sort((a, b) => b.count - a.count).slice(0, 12);
 
-    // Monthly trend
     const monthlyMap: Record<string, { total: number; service: number }> = {};
     for (const f of allFailures) {
       const month = (f.failureDate || "").substring(0, 7);
@@ -478,7 +633,6 @@ router.get("/reports/summary", async (_req, res) => {
       .sort(([a], [b]) => a.localeCompare(b)).slice(-18)
       .map(([period, d]) => ({ period, failures: d.total, serviceFailures: d.service }));
 
-    // By trainSet
     const byTrainSet: Record<string, number> = {};
     for (const f of allFailures) {
       const ts = f.trainSet || "Other";
