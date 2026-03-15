@@ -1,0 +1,393 @@
+Thank you for sharing the screenshots of NCR, EIR and RSOI applications. These are very important because they show the actual operational workflow used in railway rolling stock maintenance systems (similar to IBM Maximo / Rail FRACAS tools).
+Using:
+Your RAMS Plan
+Your PTS document
+Your Job Card dataset
+Your Vendor list
+Your NCR format
+Your Fleet configuration
+The NCR / EIR / RSOI screen structures you shared
+I have now restructured the final PRD + TRD blueprint correctly, so the application can actually be built without missing any railway operational logic.
+FINAL RAILWAY SYSTEM SPECIFICATION
+FRACAS + RAMS + NCR + EIR + RSOI PLATFORM
+System Name
+BEML Rolling Stock Reliability Management System
+Modules
+1️⃣ FRACAS Job Card System
+2️⃣ RAMS Analytics Engine
+3️⃣ NCR Management
+4️⃣ EIR (Engineering Incident Report)
+5️⃣ RSOI (Rolling Stock Open Issues)
+6️⃣ Fleet KM Monitoring
+7️⃣ Vendor Management
+8️⃣ Document Repository
+9️⃣ AI Failure Search
+🔟 Metro Project Dashboard
+SYSTEM ARCHITECTURE
+System Type
+Enterprise Railway Reliability System
+Architecture
+React Frontend
+      │
+NodeJS API Server
+      │
+RAMS Calculation Engine
+      │
+PostgreSQL Database
+      │
+AI Search Engine
+      │
+Google Drive Storage
+MASTER DATA CONFIGURATION
+Fleet
+Train Numbers
+MR601
+MR602
+MR603
+MR604
+MR605
+MR606
+MR607
+MR608
+MR609
+MR610
+MR611
+MR612
+MR613
+MR614
+MR615
+MR616
+MR617
+Car Configuration
+Code	Car
+1104	DMC1
+3104	MC1
+1204	DMC2
+2104	TC1
+2204	TC2
+3204	MC2
+Rule
+Car Code = Car Type + Train Number
+Example
+1104 → DMC1 train 04
+USER LOGIN SYSTEM
+Login page
+Dropdown selection:
+User Name
+Password
+Roles
+Admin
+Engineer
+Officer
+Data Entry
+Admin
+Name: SHASHI SHEKHAR MISHRA
+Password: 9799494321
+Role: Admin
+Admin rights
+✔ edit job cards
+✔ edit NCR
+✔ manage vendors
+✔ system configuration
+JOB CARD MODULE (FRACAS)
+This is the core reliability dataset.
+All RAMS calculations come from this module.
+Fields (complete dataset)
+SN
+JC No
+Job Card Issued To
+Failure Occurred Date
+Failure Occurred Time
+Depot Arriving Date
+Depot Arriving Time
+Job Card Issued Date
+Job Card Issued Time
+Expected Completion Date
+Expected Completion Time
+Reporting Location
+CM / PM / OPM
+Train Odometer Reading
+Train Number
+Car Number
+Failure Description
+Work Pending
+Can be Energized
+Can be Moved
+Withdraw
+Delay
+Delay Time
+Reported By
+Inspector
+Operating Condition
+Service Effect
+Service Distinction
+Delay Duration
+Service Checks
+System
+Subsystem
+Equipment
+Component
+Part
+NCR Number
+Serial Number
+Failure Location
+Failure Name
+Action Taken
+Replace Info
+Component Out Date
+Serial Out
+Component In Date
+Serial In
+Car Lifting Required
+Number of Men
+Repair Duration
+Root Cause
+Job Card Close Date
+Job Card Close Time
+Action Endorsement
+Action Endorsement Date
+Failure Category
+JOB CARD OUTPUT FORMAT
+When user clicks job card
+System generates
+Download PDF
+Format
+A4 paper
+BEML Logo
+Exact job card format you shared
+Attachments included.
+JOB CARD SEARCH ENGINE
+Search options
+Train Number
+Car Number
+System
+Subsystem
+Component
+Serial Number
+Failure Name
+Date Range
+Example
+Search
+Pantograph
+Result
+Total failures
+All job cards
+Failure trend
+RAMS CALCULATION ENGINE
+All calculations follow RAMS Plan.
+Fleet Distance
+Source
+Train Odometer Reading
+Fleet Distance
+Sum of KM
+MDBF
+MDBF =
+Fleet Distance
+/
+Service Failures
+Service failure when
+Withdraw = YES
+OR
+Delay ≥ 3 minutes
+MDBCF
+MDBCF =
+Fleet Distance
+/
+Component Failures
+MTTR
+MTTR =
+Total Repair Duration
+/
+Number of Failures
+Calculated per system.
+AVAILABILITY
+From RAMS document.
+Availability =
+1 - (DT(OPM) + DT(CM)) / Total Time
+Where
+Total Time =
+Assessment Hours × Fleet Size
+Fleet Size
+17 trains
+Target
+≥ 95%
+PATTERN FAILURE
+Triggered when
+3 identical failures
+OR
+20% fleet failure
+Dashboard shows component list.
+Click item → opens job card list.
+NCR MODULE
+Based on format you shared.
+Fields
+SL
+NCR REPORT NO
+DATE OF NCR
+DATE OF DETECTION
+ITEM DESCRIPTION
+NCR Description
+Part Number
+Modified / Unmodified
+FMI
+Faulty Serial
+Healthy Serial
+Issued By
+Quantity
+Subsystem
+Train Number
+Car
+Responsibility
+Status
+Item Repaired
+Item Replaced
+Repair Date
+Source
+Investigation Report Date
+NCR Closed Document
+Gate Pass Number
+Remarks
+IR Printed
+Output format must exactly match NCR template with BEML logo.
+EIR MODULE
+Engineering Incident Report.
+Fields from screenshot
+EIR Number
+Applicable To
+Train Set
+Car
+Equipment
+Incident Date
+Event Time
+Incident Details
+Location
+Temperature
+Reported Date
+Sections
+Actions
+Further Action
+Investigation Cause
+Conclusion
+System hierarchy
+System
+Subsystem
+Equipment
+Component
+Part
+Attachments supported.
+RSOI MODULE
+Rolling Stock Open Issues.
+Fields
+RSOI Number
+Failure Detected Job Card
+Status
+Depot
+Dates
+Start Date
+Completion Date
+Investigation
+Investigation Report Received
+Action To Be Taken
+System hierarchy
+System
+Subsystem
+Equipment
+Component
+Part
+NCR ↔ JOB CARD SYNCHRONIZATION
+Link when
+Train Number
+Car
+Component
+Serial Number
+match.
+System automatically updates
+Job Card NCR No
+NCR Job Card No
+FLEET KM DASHBOARD
+Daily KM entry
+Fields
+Train Number
+Date
+KM Run
+Dashboard shows
+Daily KM
+Monthly KM
+Fleet cumulative KM
+VENDOR MASTER
+Loaded from Google Sheet.
+Example vendors
+Televic Rail
+Knorr Bremse
+Voith
+Bonatrans
+Faiveley
+Technoware
+Melco
+Fields
+Vendor Name
+Vendor Code
+Address
+Contact Person
+Email
+Phone
+System Supplied
+DASHBOARD ANALYTICS
+Dashboard widgets
+Fleet KM
+Service Failures
+MDBF
+MDBCF
+MTTR
+Availability
+Pattern Failures
+Open NCR
+Charts
+Failure by system
+Failure by component
+Failure trend
+DATA IMPORT
+Supported formats
+CSV
+Excel
+Google Sheets
+Auto column mapping.
+DATA EXPORT
+Supported formats
+PDF
+Excel
+Reports
+Job Card Report
+NCR Report
+RAMS Report
+Failure Trend
+BACKUP SYSTEM
+Daily backup
+Google Drive.
+DEPLOYMENT STACK
+Frontend
+React + Tailwind
+Backend
+NodeJS + Express
+Database
+PostgreSQL
+Hosting
+Render / Supabase
+FINAL RESULT
+This system will deliver
+✔ FRACAS failure management
+✔ RAMS reliability analytics
+✔ Availability monitoring
+✔ NCR investigation management
+✔ EIR incident tracking
+✔ RSOI open issue tracking
+✔ Fleet KM monitoring
+✔ Vendor reliability tracking
+The specification now includes
+✔ NCR system structure
+✔ EIR system structure
+✔ RSOI workflow
+✔ Job card dataset
+✔ Train numbering rules
+✔ Car numbering logic
+✔ RAMS formulas

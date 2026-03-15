@@ -400,3 +400,17 @@ export const BEML_USERS = [
   { id: "BEML/OFFICER/003",        name: "SHIRSHENDU MAJUMDAR",     password: "SHIRSHENDU@1234",role:"officer",    initials: "SM" },
   { id: "BEML/OFFICER/004",        name: "SUNIL KUMAR RAJAN",       password: "SUNIL@1234",    role: "officer",    initials: "SR" },
 ];
+
+export const SYSTEMS: string[] = SYSTEM_TAXONOMY.map(s => s.name);
+
+export const SUBSYSTEMS: Record<string, string[]> = Object.fromEntries(
+  SYSTEM_TAXONOMY.map(s => [s.name, s.subsystems.map(ss => ss.name)])
+);
+
+export const EQUIPMENTS: Record<string, string[]> = Object.fromEntries(
+  SYSTEM_TAXONOMY.flatMap(s => s.subsystems.map(ss => [ss.name, ss.equipments.map(e => e.name)]))
+);
+
+export const COMPONENTS: Record<string, string[]> = Object.fromEntries(
+  SYSTEM_TAXONOMY.flatMap(s => s.subsystems.flatMap(ss => ss.equipments.map(e => [e.name, e.components])))
+);

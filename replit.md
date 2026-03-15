@@ -26,6 +26,7 @@ Based on:
 - **Forms**: react-hook-form + zod
 - **CSV I/O**: PapaParse
 - **Auth**: Context-based with localStorage persistence (hardcoded BEML users)
+- **AI**: Gemini AI via Replit AI Integrations (no external API key needed) — RAMS analysis chatbot
 
 ## Authentication
 

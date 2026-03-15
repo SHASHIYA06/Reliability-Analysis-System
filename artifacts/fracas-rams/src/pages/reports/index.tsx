@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useGetMDBFReport, useGetMTTRReport,
   useGetAvailabilityReport, useGetMDBCFReport, useGetPatternFailures,
@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, ReferenceLine, Legend,
 } from "recharts";
 import {
   CheckCircle2, AlertTriangle, Download, TrendingUp, Activity,
-  Clock, Gauge, Shield, ChevronRight, ChevronDown,
+  Clock, Gauge, Shield, ChevronRight, ChevronDown, BrainCircuit, Send, Sparkles, Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -121,6 +122,121 @@ function PatternRow({ p }: { p: any }) {
   );
 }
 
+/* ─── AI Insights Panel ─────────────────────────────────────────────────────── */
+type Message = { role: "user" | "ai"; text: string };
+
+const QUICK_QUESTIONS = [
+  "What are the top 3 failure patterns in the fleet?",
+  "Which systems have the most service failures?",
+  "How is our MDBF trending vs. the 60,000 km target?",
+  "Which components need priority corrective action?",
+  "Summarize MTTR performance and highlight non-compliant systems.",
+];
+
+function AIInsightsTab() {
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "ai", text: "Hello! I'm your RAMS AI Analyst powered by Gemini. I can analyze your job card data and provide insights on failure patterns, MDBF trends, MTTR performance, and RAMS compliance. Ask me anything about your fleet." },
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  const ask = async (q: string) => {
+    if (!q.trim() || loading) return;
+    const question = q.trim();
+    setInput("");
+    setMessages(m => [...m, { role: "user", text: question }]);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/ai/analyze-failures", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      const data = await res.json() as { answer?: string; error?: string };
+      if (!res.ok) throw new Error(data.error || "AI failed");
+      setMessages(m => [...m, { role: "ai", text: data.answer || "No response." }]);
+    } catch (err: any) {
+      setMessages(m => [...m, { role: "ai", text: `Error: ${err.message}` }]);
+    } finally {
+      setLoading(false);
+      setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl px-5 py-3 flex items-center gap-3">
+        <BrainCircuit className="w-5 h-5 text-primary shrink-0" />
+        <span className="text-xs text-muted-foreground">
+          <strong className="text-foreground">Gemini AI RAMS Analyst</strong> — Analyzes your real job card database and provides insights based on EN 50126:1999 RAMS standards.
+          Powered by Replit AI Integrations (no API key required).
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {QUICK_QUESTIONS.map(q => (
+          <button key={q} onClick={() => ask(q)}
+            className="text-xs px-3 py-1.5 rounded-full border border-border/60 bg-card hover:bg-muted/50 hover:border-primary/40 transition-colors text-muted-foreground hover:text-foreground">
+            {q}
+          </button>
+        ))}
+      </div>
+
+      <Card className="bg-card border-border shadow-lg">
+        <div className="h-96 overflow-y-auto p-4 space-y-4">
+          {messages.map((m, i) => (
+            <div key={i} className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              {m.role === "ai" && (
+                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                </div>
+              )}
+              <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                m.role === "user"
+                  ? "bg-primary text-primary-foreground rounded-br-none"
+                  : "bg-muted/50 border border-border/50 rounded-bl-none"
+              }`}>
+                {m.text}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex gap-3 justify-start">
+              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+                <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+              </div>
+              <div className="bg-muted/50 border border-border/50 rounded-xl rounded-bl-none px-4 py-3">
+                <div className="flex gap-1.5 items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <span className="text-xs text-muted-foreground ml-1">Analyzing your FRACAS data…</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+        <div className="border-t border-border p-3 flex gap-2">
+          <Input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(input); } }}
+            placeholder="Ask about failure patterns, MDBF, MTTR, availability compliance…"
+            className="bg-background border-border"
+            disabled={loading}
+          />
+          <Button onClick={() => ask(input)} disabled={loading || !input.trim()} className="bg-primary hover:bg-primary/90 shrink-0">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 /* ─── Main Component ────────────────────────────────────────────────────────── */
 export default function Reports() {
   const { data: mdbf } = useGetMDBFReport() as { data: any };
@@ -144,13 +260,14 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="mdbf" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-muted/50 border border-border rounded-xl">
+        <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-muted/50 border border-border rounded-xl">
           {[
             { value: "mdbf", label: "MDBF" },
             { value: "mdbcf", label: "MDBCF" },
             { value: "mttr", label: "MTTR" },
             { value: "availability", label: "Availability" },
             { value: "patterns", label: "Pattern Failures" },
+            { value: "ai", label: "🤖 AI Insights" },
           ].map(t => (
             <TabsTrigger
               key={t.value}
@@ -548,6 +665,11 @@ export default function Reports() {
               )}
             </>
           )}
+        </TabsContent>
+
+        {/* ── AI INSIGHTS ──────────────────────────────────────────────────── */}
+        <TabsContent value="ai" className="mt-6">
+          <AIInsightsTab />
         </TabsContent>
 
         {/* ── PATTERN FAILURES ──────────────────────────────────────────────── */}
