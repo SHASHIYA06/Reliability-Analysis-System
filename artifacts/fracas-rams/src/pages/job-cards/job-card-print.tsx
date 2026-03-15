@@ -145,14 +145,23 @@ export function JobCardPrint({ data: jc, onClose }: JobCardPrintProps) {
                 <div><strong>Odometer (km):</strong> {jc.trainDistanceAtFailure != null ? Number(jc.trainDistanceAtFailure).toLocaleString() : "—"}</div>
                 <div><strong>Location:</strong> {f(jc.reportingLocation)}</div>
               </div>
-              <div style={{ display: "flex", gap: "16px", marginBottom: "4px", fontSize: "9pt" }}>
-                <div>
-                  <strong>Reliability Issues: &nbsp;</strong>
-                  <span style={{ marginRight: "8px" }}>☐ De-boarding</span>
-                  <span style={{ marginRight: "8px" }}>☐ Withdrawal</span>
-                  <span style={{ marginRight: "8px" }}>☐ Trip Cancelled</span>
-                  <span style={{ marginRight: "8px" }}>☐ Trips Delayed</span>
-                  <span>☐ Not Applicable</span>
+              <div style={{ display: "flex", gap: "16px", marginBottom: "4px", fontSize: "9pt", flexWrap: "wrap" }}>
+                <div><strong>Reliability Issues: &nbsp;</strong></div>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  {[
+                    { label: "De-boarding", val: false },
+                    { label: "Withdrawal", val: jc.withdrawalRequired },
+                    { label: "Trip Cancelled", val: false },
+                    { label: "Trips Delayed", val: jc.delay },
+                    { label: "Not Applicable", val: !jc.withdrawalRequired && !jc.delay },
+                  ].map(item => (
+                    <span key={item.label} style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                      <span style={{ width: "12px", height: "12px", border: "1px solid #000", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "8pt" }}>
+                        {item.val ? "✓" : ""}
+                      </span>
+                      {item.label}
+                    </span>
+                  ))}
                 </div>
               </div>
               <div style={{ display: "flex", gap: "16px", marginBottom: "4px", fontSize: "9pt" }}>
@@ -287,6 +296,21 @@ export function JobCardPrint({ data: jc, onClose }: JobCardPrintProps) {
               <div style={{ marginTop: "4px" }}><strong>Follow Up Details:</strong>
                 <div style={{ border: "1px solid #aaa", minHeight: "24px", padding: "3px", marginTop: "2px" }}>{f(jc.correctiveAction)}</div>
               </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                <div>Name: ___________________________</div>
+                <div>Signature: _______________________</div>
+                <div>Date: ____________</div>
+                <div>Time: ____________</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Part G — Follow Up & Final Inspection */}
+          <div style={{ border: "1px solid #000", marginBottom: "6px" }}>
+            <div style={{ background: "#ddd", fontWeight: "bold", padding: "3px 6px", borderBottom: "1px solid #000", fontSize: "9pt" }}>Part G: Completion of Follow Up Action and Final Inspection (if required)</div>
+            <div style={{ padding: "6px 8px", fontSize: "9pt" }}>
+              <p style={{ marginBottom: "4px" }}>I hereby declare that all persons have been withdrawn &amp; all the Equipment affected as detailed in Part A above have been restored to normal.</p>
+              <p style={{ marginBottom: "4px" }}>I hereby declare that all necessary follow up action as described in Part B &amp;/or C above and final inspection including SIC (if any) have been completed.</p>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
                 <div>Name: ___________________________</div>
                 <div>Signature: _______________________</div>

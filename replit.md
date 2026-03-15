@@ -43,11 +43,16 @@ Users:
 
 ## Real Data
 
-- **4,270 BEML job cards** imported from `BEML_Master_Job_card_details_as_on_05.03.26_(TS#01_to_14)` CSV
-- **3,132 unique records** after deduplication by job card number (ON CONFLICT upsert)
-- **Train sets**: TS01–TS14 (MR601–MR614), TS15 (spare)
+- **3,132 unique job cards** from `BEML_Master_Job_card_details_as_on_05.03.26_(TS#01_to_14)` CSV
+  - CSV uses `_` (underscore) as a checkbox/mark for withdrawal and delay fields
+  - Fixed `normBool()` to handle `_` → true (critical for RAMS service failure calculation)
+- **928 NCR records** imported from `NCRs_master_list_as_on_date_11.02.26` CSV (933 imported, 5 were duplicates updated)
+  - 897 NCRs with train numbers, 896 with sub-system
+- **Train sets**: TS01–TS14 (MR601–MR614)
 - **Fleet KM**: 2,058,001 km (from max odometer per train set)
 - **Date range**: Aug 2023 – Mar 2026
+- **RAMS Actual (as of Mar 2026)**: MDBF=12,549km | MTTR=396min | Availability=90.70%
+  - 163 withdrawals, 164 delays (service failures = 164 unique events)
 
 Import script: `scripts/import-beml-jobcards.mjs`
 Re-import command: `node scripts/import-beml-jobcards.mjs`

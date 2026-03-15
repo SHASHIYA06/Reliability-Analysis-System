@@ -65,7 +65,10 @@ function normDate(v) {
 
 function normBool(v) {
   if (!v) return false;
-  return ["yes", "y", "true", "1"].includes(String(v).toLowerCase().trim());
+  const s = String(v).toLowerCase().trim();
+  // "_" is used as a checkbox/mark in BEML CSV format to indicate "Yes"
+  if (s === "_") return true;
+  return ["yes", "y", "true", "1"].includes(s);
 }
 
 function normText(v) {
@@ -119,6 +122,34 @@ function getSysCode(sysName) {
     if (sl.includes(key)) return code;
   }
   return sysName.toUpperCase().substring(0, 6) || "GEN";
+}
+
+/**
+ * Parse delay duration into minutes.
+ * Handles: "00/00/03" (DD/HH/MM) → 3 min, "3 MINS" → 3, "0.5" hr → 30, etc.
+ */
+function parseDelayMinutes(delayTime, delayDuration) {
+  for (const raw of [delayTime, delayDuration]) {
+    if (!raw || String(raw).trim() === "_" || String(raw).trim() === "") continue;
+    const s = String(raw).trim();
+
+    // DD/HH/MM format: "00/00/05" → 5 mins
+    const dhm = s.match(/^(\d+)\/(\d+)\/(\d+)$/);
+    if (dhm) {
+      const mins = parseInt(dhm[1]) * 1440 + parseInt(dhm[2]) * 60 + parseInt(dhm[3]);
+      if (mins > 0) return mins;
+    }
+    // "X MINS" or "X MIN"
+    const minMatch = s.match(/^(\d+)\s*min/i);
+    if (minMatch) return parseInt(minMatch[1]);
+    // "X HOURS" or "Xhr"
+    const hrMatch = s.match(/^(\d+(?:\.\d+)?)\s*h(?:r|ours?)?/i);
+    if (hrMatch) return Math.round(parseFloat(hrMatch[1]) * 60);
+    // Just a number — treat as minutes
+    const n = parseFloat(s);
+    if (!isNaN(n) && n > 0 && n < 1440) return Math.round(n);
+  }
+  return null;
 }
 
 // Generate FRACAS number
@@ -227,7 +258,7 @@ async function main() {
           delay_time: c(22),
           service_distinction: c(27),
           delay_duration: c(28),
-          delay_minutes: null,
+          delay_minutes: parseDelayMinutes(c(22), c(28)),
           service_checks: c(29),
           car_lifting_required: normBool(c(45)),
           no_of_men: normInt(c(46)),

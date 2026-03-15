@@ -1,21 +1,32 @@
 import { Router, type IRouter } from "express";
 import { db, ncrTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, like, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
 
-function generateNcrNumber(): string {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const rand = Math.floor(Math.random() * 900) + 100;
-  return `NCR-BEML-RS3R-${year}${month}-${rand}`;
-}
-
-router.get("/ncr", async (_req, res) => {
+router.get("/ncr", async (req, res) => {
   try {
-    const records = await db.select().from(ncrTable).orderBy(sql`${ncrTable.createdAt} DESC`);
+    const { trainNo, subSystem, status, search, limit, offset } = req.query as Record<string, string>;
+    let query = db.select().from(ncrTable);
+    const conditions: any[] = [];
+    if (trainNo) conditions.push(eq(ncrTable.trainNo, trainNo));
+    if (subSystem) conditions.push(eq(ncrTable.subSystem, subSystem));
+    if (status) conditions.push(eq(ncrTable.status, status.toUpperCase()));
+    if (search) {
+      conditions.push(or(
+        like(ncrTable.ncrNumber, `%${search}%`),
+        like(ncrTable.itemDescription, `%${search}%`),
+        like(ncrTable.ncrDescription, `%${search}%`),
+        like(ncrTable.faultySlNo, `%${search}%`),
+        like(ncrTable.responsibility, `%${search}%`),
+      ));
+    }
+    const records = await db.select().from(ncrTable)
+      .where(conditions.length > 0 ? sql`${conditions.reduce((a, b) => sql`${a} AND ${b}`)}` : undefined)
+      .orderBy(desc(ncrTable.createdAt))
+      .limit(parseInt(limit || "200"))
+      .offset(parseInt(offset || "0"));
     res.json(records);
   } catch (err) {
     console.error(err);
@@ -28,46 +39,74 @@ router.post("/ncr", async (req, res) => {
     const body = req.body;
     const record = {
       id: randomUUID(),
-      ncrNumber: body.ncrNumber || generateNcrNumber(),
+      ncrNumber: body.ncrNumber || `NCR-BEML-RS3R-${Date.now()}`,
+      sl: body.sl || null,
+      dateOfNcr: body.dateOfNcr || new Date().toISOString().split("T")[0],
+      dateOfDetection: body.dateOfDetection || null,
+      itemDescription: body.itemDescription || null,
+      ncrDescription: body.ncrDescription || null,
+      partNumber: body.partNumber || null,
+      modifiedOrUnmodifiedFmi: body.modifiedOrUnmodifiedFmi || null,
+      failureAfterFmi: body.failureAfterFmi || null,
+      faultySlNo: body.faultySlNo || null,
+      healthySlNo: body.healthySlNo || null,
+      issuedBy: body.issuedBy || null,
+      qty: body.qty || null,
+      subSystem: body.subSystem || null,
+      trainNo: body.trainNo || null,
+      car: body.car || null,
+      responsibility: body.responsibility || null,
+      status: (body.status || "OPEN").toUpperCase(),
+      itemRepairedRecouped: body.itemRepairedRecouped || null,
+      itemReplaced: body.itemReplaced || null,
+      dateOfRepairedReplaced: body.dateOfRepairedReplaced || null,
+      source: body.source || null,
+      investigationReportDate: body.investigationReportDate || null,
+      ncrClosedByDoc: body.ncrClosedByDoc || null,
+      gatePassNo: body.gatePassNo || null,
+      remarks: body.remarks || null,
+      irPrinted: body.irPrinted || null,
+      // NCR-870 format fields
       projectName: body.projectName || "KMRCL RS-3R",
-      vehicleNumber: body.vehicleNumber || null,
+      vehicleNo: body.vehicleNo || null,
       productName: body.productName || null,
-      assemblyDrawingNumber: body.assemblyDrawingNumber || null,
+      assemblyDrawingNo: body.assemblyDrawingNo || null,
+      revision: body.revision || null,
       quantity: body.quantity || null,
       supplier: body.supplier || null,
-      detectionDate: body.detectionDate || null,
-      place: body.place || null,
-      storedAt: body.storedAt || null,
-      severity: body.severity || null,
-      responsibleParty: body.responsibleParty || null,
-      materialStatus: body.materialStatus || null,
-      partNumber: body.partNumber || null,
-      partSerialNumber: body.partSerialNumber || null,
-      assemblySerialNumber: body.assemblySerialNumber || null,
+      assemblySerialNo: body.assemblySerialNo || null,
+      partSerialNo: body.partSerialNo || null,
+      place: body.place || "CPD Depot",
       blNumber: body.blNumber || null,
-      invoiceNumber: body.invoiceNumber || null,
-      distributionTo: body.distributionTo || null,
-      description: body.description,
-      attachedDocuments: body.attachedDocuments || null,
-      pictureUrl: body.pictureUrl || null,
-      issuedBy: body.issuedBy || null,
-      issuedByTeam: body.issuedByTeam || null,
-      reviewedApprovedBy: body.reviewedApprovedBy || null,
-      issueDate: body.issueDate || new Date().toISOString().split("T")[0],
+      storedAt: body.storedAt || "CPD Depot",
+      invoiceNo: body.invoiceNo || null,
+      severity: body.severity || "Minor",
+      responsibleParty: body.responsibleParty || null,
+      materialStatus: body.materialStatus || "Installed",
+      distributionTo: body.distributionTo || "OEM/ SBU-S&M / R&D/ PM/Purchase/ Quality",
+      descriptionOfNonConformity: body.descriptionOfNonConformity || body.ncrDescription || null,
+      attachedDocuments: body.attachedDocuments || "Picture attached",
+      issuedByTeam: body.issuedByTeam || "BEML (S&M)",
+      reviewedApprovedBy: body.reviewedApprovedBy || "Shashi Shekhar Mishra",
+      issueDate: body.issueDate || body.dateOfNcr || null,
       causeOfNonConformity: body.causeOfNonConformity || null,
       correctionAction: body.correctionAction || null,
+      healthySlNoIn: body.healthySlNoIn || body.healthySlNo || null,
+      faultySlNoOut: body.faultySlNoOut || body.faultySlNo || null,
       correctionActionDate: body.correctionActionDate || null,
       correctionActionBy: body.correctionActionBy || null,
       correctionReviewedBy: body.correctionReviewedBy || null,
       decision: body.decision || null,
-      repairProcedureRequired: body.repairProcedureRequired || null,
+      repairProcedureRequired: body.repairProcedureRequired || "No",
       verificationOnCorrection: body.verificationOnCorrection || null,
       verificationOnCorrectiveAction: body.verificationOnCorrectiveAction || null,
-      status: body.status || "open",
+      approvedByName: body.approvedByName || "Shashi Shekhar Mishra",
+      approvedByPosition: body.approvedByPosition || null,
+      approvedByEntity: body.approvedByEntity || null,
       linkedJobCardId: body.linkedJobCardId || null,
       linkedJobCardNumber: body.linkedJobCardNumber || null,
     };
-    const [created] = await db.insert(ncrTable).values(record).returning();
+    const [created] = await db.insert(ncrTable).values(record as any).returning();
     res.status(201).json(created);
   } catch (err) {
     console.error(err);
@@ -112,6 +151,7 @@ router.delete("/ncr/:id", async (req, res) => {
   }
 });
 
+// Bulk import from CSV
 router.post("/ncr/import", async (req, res) => {
   try {
     const { records, clearFirst } = req.body;
@@ -121,33 +161,55 @@ router.post("/ncr/import", async (req, res) => {
     if (clearFirst) await db.delete(ncrTable);
     let imported = 0;
     const errors: string[] = [];
+
     for (const row of records) {
       try {
+        const ncrNum = row["NCR REPORT NO."] || row["NCR REPORT NO"] || row.ncrNumber || row["NCR No"];
+        if (!ncrNum) continue;
+        const trainNo = row[" Train No"] || row["Train No"] || row["Train No."] || row.trainNo;
+        const car = row["CAR"] || row["Car"] || row.car;
+        const rawStatus = (row["STATUS"] || row.status || "OPEN").toUpperCase();
+        const status = rawStatus === "CLOSED" ? "CLOSED" : rawStatus === "CANCELED" || rawStatus === "CANCELLED" ? "CANCELED" : "OPEN";
         const record = {
           id: randomUUID(),
-          ncrNumber: row.ncrNumber || row["NCR Number"] || row["NCR No"] || generateNcrNumber(),
-          projectName: row.projectName || row["Project"] || "KMRCL RS-3R",
-          vehicleNumber: row.vehicleNumber || row["Vehicle Number"] || row["Vehicle No"] || null,
-          productName: row.productName || row["Product"] || row["Component"] || null,
-          supplier: row.supplier || row["Supplier"] || row["OEM"] || null,
-          detectionDate: row.detectionDate || row["Detection Date"] || row["Date"] || null,
-          place: row.place || row["Place"] || null,
-          severity: (row.severity || row["Severity"] || "minor").toLowerCase(),
-          responsibleParty: row.responsibleParty || row["Responsible Party"] || null,
-          description: row.description || row["Description"] || row["Non-Conformance Description"] || "Imported NCR",
-          issuedBy: row.issuedBy || row["Issued By"] || null,
-          issueDate: row.issueDate || row["Issue Date"] || row.detectionDate || null,
-          decision: row.decision || row["Decision"] || null,
-          status: (row.status || row["Status"] || "open").toLowerCase(),
-          linkedJobCardNumber: row.linkedJobCardNumber || row["Job Card No"] || row["JC No"] || null,
+          sl: row["SL."] || row["SL"] || row.sl || null,
+          ncrNumber: ncrNum,
+          dateOfNcr: row["DATE OF NCR "] || row["DATE OF NCR"] || row.dateOfNcr || null,
+          dateOfDetection: row["DATE  OF DETECTION"] || row["DATE OF DETECTION"] || row.dateOfDetection || null,
+          itemDescription: row["ITEM DESCRIPTION"] || row.itemDescription || null,
+          ncrDescription: row["NCR Description"] || row.ncrDescription || null,
+          partNumber: row["Part Number"] || row.partNumber || null,
+          modifiedOrUnmodifiedFmi: row["Modified or Unmodified\nFMI"] || row.modifiedOrUnmodifiedFmi || null,
+          failureAfterFmi: row["Failure After FMI"] || row.failureAfterFmi || null,
+          faultySlNo: row["Faulty Sl. No."] || row.faultySlNo || null,
+          healthySlNo: row["Healthy Sl. No."] || row.healthySlNo || null,
+          issuedBy: row["ISSUED BY"] || row.issuedBy || null,
+          qty: row["Qty."] || row.qty || null,
+          subSystem: row["SUB-SYSTEM"] || row.subSystem || null,
+          trainNo: trainNo || null,
+          car: car || null,
+          responsibility: row["RESPONSIBILITY (VENDOR/BEML)"] || row.responsibility || null,
+          status,
+          itemRepairedRecouped: row["ITEM REPAIRED/ RECOUPED"] || row.itemRepairedRecouped || null,
+          itemReplaced: row["ITEM REPLACED (IF ANY)"] || row.itemReplaced || null,
+          dateOfRepairedReplaced: row["DATE OF REPAIRED/REPLACED"] || row.dateOfRepairedReplaced || null,
+          source: row["SOURCE"] || row.source || null,
+          investigationReportDate: row["DATE OF INVESTIGATION REPORT RECEIVED"] || row.investigationReportDate || null,
+          ncrClosedByDoc: row["NCR CLOSED BY DOC.,"] || row.ncrClosedByDoc || null,
+          gatePassNo: row["GATE PASS           S/No"] || row["GATE PASS S/No"] || row.gatePassNo || null,
+          remarks: row["Remarks"] || row.remarks || null,
+          irPrinted: row["IR Printed"] || row.irPrinted || null,
+          vehicleNo: trainNo ? `TS#${String(trainNo).padStart(2, "0")} ${car || ""}`.trim() : null,
+          projectName: "KMRCL RS-3R",
         };
-        await db.insert(ncrTable).values(record as any);
+        await db.insert(ncrTable).values(record as any)
+          .onConflictDoUpdate({ target: ncrTable.ncrNumber, set: { status: record.status, updatedAt: new Date() } });
         imported++;
       } catch (e: any) {
-        errors.push(`${row.ncrNumber || "row"}: ${e.message}`);
+        errors.push(`${row.ncrNumber || "row"}: ${e.message?.substring(0, 80)}`);
       }
     }
-    res.json({ imported, failed: errors.length, errors });
+    res.json({ imported, failed: errors.length, errors: errors.slice(0, 10) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to import NCRs" });

@@ -1,0 +1,407 @@
+You are also correct that many specifications fail because the PRD does not include real master datasets and field-level mapping. Your system must include every operational field, otherwise:
+RAMS calculations become wrong
+Availability computation becomes wrong
+MDBF/MDBCF cannot be validated
+NCR ↔ Job Card linking fails
+Reports cannot match railway format
+So below I am presenting the correct integrated specification structure that includes all datasets you provided and fixes the missing areas you mentioned.
+MASTER RAILWAY APPLICATION SPECIFICATION
+FRACAS + RAMS + NCR + FLEET MANAGEMENT PLATFORM
+System Name
+BEML Rolling Stock Reliability Management System
+Purpose
+To manage:
+FRACAS failure tracking
+RAMS analytics
+NCR management
+Fleet KM monitoring
+Vendor tracking
+Reliability reporting
+Based on
+RAMS Plan GR-TD-3457
+PTS reliability requirements
+Job Card format you provided
+1 FLEET CONFIGURATION MASTER
+Train Numbers
+Train numbers are not TS numbers in job card.
+Train numbers must be:
+Train
+MR601
+MR602
+MR603
+MR604
+MR605
+MR606
+MR607
+MR608
+MR609
+MR610
+MR611
+MR612
+MR613
+MR614
+MR615
+MR616
+MR617
+These correspond to trainset TS01–TS17 internally.
+Database table:
+trains
+------
+train_id
+train_number
+trainset_reference
+status
+2 CAR NOMENCLATURE MASTER
+Each train has 6 cars.
+Format rule:
+XXXX
+Where:
+11 = DMC1
+31 = MC1
+12 = DMC2
+21 = TC1
+22 = TC2
+32 = MC2
+Example:
+Car Code	Meaning
+1104	DMC1 train 04
+3104	MC1 train 04
+1204	DMC2 train 04
+2104	TC1 train 04
+2204	TC2 train 04
+3204	MC2 train 04
+Database table
+cars
+----
+car_id
+train_number
+car_type
+car_code
+3 USER MASTER DATA
+Login method:
+Username dropdown (name list)
+Password field
+Admin
+Name	Role
+SHASHI SHEKHAR MISHRA	Admin
+Password
+9799494321
+Engineers
+AKHILESH KUMAR YADAV
+CHANDAN KUMAR
+Officers
+ARAGHYA KAR
+SHILPA SAHU
+SHIRSHENDU MAJUMDAR
+SUNIL KUMAR RAJAN
+Data Entry
+KAUSHIK MONDAL
+Database table
+users
+-----
+user_id
+employee_code
+name
+role
+password_hash
+4 SYSTEM HIERARCHY MASTER
+Dropdown hierarchy
+System
+→ Subsystem
+→ Equipment
+→ Component
+→ Parts
+Systems
+General
+Traction System
+Brake System
+Door System
+Air Conditioning System
+Bogie & Suspension
+Train Integrated Management System
+Communication System
+Fire Detection System
+Vehicle Control System
+Auxiliary Electric System
+Lighting System
+Gangway & Coupler
+Database
+systems
+subsystems
+equipments
+components
+parts
+5 SERVICE CHECK MASTER
+Used only when
+CM/PM/OPM = PM
+Values
+A Service Check
+B1 Service Check
+B4 Service Check
+B8 Service Check
+C1 Service Check
+C2 Service Check
+C5 Service Check
+6 FAILURE CATEGORY MASTER
+Dropdown values
+1 System Design
+2 Software Error
+3 Equipment failure
+4 Equipment failure NFF
+5 Poor workmanship
+6 Loose wire connector
+7 NFF MCB trip
+8 NFF system hang
+9 NFF others
+10 Incorrect operation
+11 External factor
+12 Others
+7 JOB CARD DATA MODEL
+Job card must store ALL columns you provided.
+Table
+job_cards
+Columns
+SN
+JC No
+Job Card Issued To
+Failure Occurred Date
+Failure Occurred Time
+Depot Arriving Date
+Depot Arriving Time
+Job Card Issued Time
+Job Card Issued Date
+Expected Complete Date
+Expected Complete Time
+Reporting Location
+CM/PM/OPM
+Train Odometer Reading
+Train Number
+Car Number
+Failure Description
+Work Pending
+Can be Energized
+Can be Moved
+Withdraw
+Delay
+Delay Time
+Reported By
+Inspector
+Job Operating Conditions
+Effects on Train Service
+Service Distinction
+Delay Duration
+Service Checks
+System
+Sub System
+Equipment
+Component
+Parts
+NCR Number
+Serial Number
+Failure Location
+Failure Name
+Action Taken
+Replace Change Info
+Component Out Date
+Serial Out
+Component In Date
+Serial In
+Car Lifting Required
+Number of Men
+Repair Duration
+Root Cause
+Job Card Close Date
+Job Card Close Time
+Action Endorsement
+Action Endorsement Date
+Failure Category
+8 RAMS CALCULATION ENGINE
+All calculations must follow RAMS document.
+Fleet Distance
+Source
+TRAIN ODOMETER READING
+Fleet distance
+sum(km_reading)
+MDBF
+MDBF =
+Fleet Distance
+/
+Service Failures
+Service failure detected when
+Withdraw = YES
+OR
+Delay >= 3 minutes
+MDBCF
+MDBCF =
+Fleet Distance
+/
+Component Failures
+MTTR
+MTTR =
+Total Repair Duration
+/
+Failures
+Calculated per system.
+AVAILABILITY
+From RAMS plan
+Availability =
+1 - (DT(OPM) + DT(CM)) / Total Time
+Where
+Total Time =
+Assessment Period Hours × Number of trains
+DT(OPM)
+Downtime from OPM job cards
+DT(CM)
+Downtime from CM job cards
+Target
+>= 95%
+PATTERN FAILURE
+Condition
+>=3 failures
+OR
+>=20% fleet failure
+Must show list of components.
+Clicking item opens job card list.
+9 FLEET KM DASHBOARD
+Users can enter daily km.
+Table
+fleet_km
+Columns
+train_number
+date
+km_run
+Dashboard shows
+Daily distance
+Monthly distance
+Fleet cumulative distance
+10 JOB CARD SEARCH ENGINE
+Search options
+Train Number
+Car Number
+System
+Subsystem
+Component
+Serial Number
+Failure Name
+Date Range
+Example
+Search
+Pantograph
+System shows
+Total failures
+All job cards
+Failure trend
+11 NCR MODULE
+Table
+ncr_reports
+Columns
+SL
+NCR REPORT NO
+DATE OF NCR
+DATE OF DETECTION
+ITEM DESCRIPTION
+NCR Description
+Part Number
+Modified or Unmodified
+FMI
+Faulty Serial
+Healthy Serial
+Issued By
+Quantity
+Subsystem
+Train Number
+Car
+Responsibility
+Status
+Item Repaired
+Item Replaced
+Repair Date
+Source
+Investigation Report Date
+NCR Closed Document
+Gate Pass Number
+Remarks
+IR Printed
+NCR output must match your provided format exactly.
+12 NCR ↔ JOB CARD LINKING
+If
+Train Number
+Car
+Component
+Serial Number
+match
+then system automatically links
+job card ↔ NCR
+13 VENDOR MASTER
+Loaded from Google Sheet.
+Fields
+Vendor Name
+Vendor Code
+Address
+Email
+Phone
+Contact Person
+System
+Example
+Televic Rail
+Knorr Bremse
+Voith
+Bonatrans
+Faiveley
+Technoware
+Melco
+14 JOB CARD EXPORT
+When clicking job card
+User gets
+Download PDF
+Format
+A4
+Exact layout
+BEML logo
+Attachments included.
+15 DASHBOARD METRICS
+Dashboard shows
+Fleet distance
+Service failures
+MDBF
+MDBCF
+MTTR
+Availability
+Pattern failures
+Open NCR
+16 DATA SYNCHRONIZATION
+Google Sheet sync every
+2 hours
+Sheets
+Vendor list
+Spare parts
+Job cards
+Locations
+17 DEPLOYMENT
+Frontend
+React + Tailwind
+Backend
+NodeJS + Express
+Database
+PostgreSQL
+Hosting
+Render / Supabase
+FINAL RESULT
+The completed system will provide
+FRACAS failure tracking
+RAMS reliability analytics
+Availability monitoring
+NCR management
+Fleet km monitoring
+Vendor reliability tracking
+Railway-grade reporting
+This specification now includes
+✔ Full Job Card dataset
+✔ Train numbering rules
+✔ Car nomenclature rules
+✔ RAMS formulas
+✔ NCR schema
+✔ Vendor master
+✔ User roles
+✔ Search logic
+✔ Dashboard metrics
