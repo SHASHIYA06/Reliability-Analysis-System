@@ -12,7 +12,12 @@ import {
   Menu,
   ClipboardList,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  ClipboardCheck,
+  FileCheck,
+  ShieldAlert,
+  ArrowRightLeft,
+  Package,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -23,13 +28,39 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: Wrench, label: "Job Cards (FRACAS)", href: "/job-cards" },
-  { icon: FileBarChart, label: "RAMS Reports", href: "/reports" },
-  { icon: Train, label: "Fleet Management", href: "/fleet" },
-  { icon: ClipboardList, label: "NCR Management", href: "/ncr" },
-  { icon: BookOpen, label: "Withdrawal Scenarios", href: "/scenarios" },
+const navSections = [
+  {
+    section: "Core",
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+      { icon: Wrench,           label: "Job Cards (FRACAS)", href: "/job-cards" },
+      { icon: FileBarChart,     label: "RAMS Reports", href: "/reports" },
+      { icon: Train,            label: "Fleet Management", href: "/fleet" },
+    ],
+  },
+  {
+    section: "Quality & NCR",
+    items: [
+      { icon: ClipboardList,  label: "NCR Management", href: "/ncr" },
+      { icon: BookOpen,       label: "Withdrawal Scenarios", href: "/scenarios" },
+      { icon: ShieldAlert,    label: "DLP Items", href: "/dlp" },
+    ],
+  },
+  {
+    section: "Inspection",
+    items: [
+      { icon: ClipboardCheck, label: "EIR", href: "/eir" },
+      { icon: FileCheck,      label: "RSOI", href: "/rsoi" },
+    ],
+  },
+  {
+    section: "Store & Tools",
+    items: [
+      { icon: Package,        label: "Store Inventory", href: "/inventory" },
+      { icon: Wrench,         label: "Tools Management", href: "/tools" },
+      { icon: ArrowRightLeft, label: "Gate Pass", href: "/gate-pass" },
+    ],
+  },
 ];
 
 function BEMLLogo() {
@@ -56,12 +87,13 @@ export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { user, logout, isAdmin } = useAuth();
 
-  const roleLabel = {
+  const roleLabelMap: Record<string, string> = {
     admin: "Admin",
     engineer: "Engineer",
     officer: "Officer",
     "data-entry": "Data Entry",
-  }[user?.role || ""] || "";
+  };
+  const roleLabel = roleLabelMap[user?.role || ""] || "";
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
@@ -71,28 +103,32 @@ export function Layout({ children }: LayoutProps) {
           <BEMLLogo />
         </div>
         
-        <div className="p-4 flex-1 overflow-y-auto">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
-            Modules
-          </div>
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-              return (
-                <Link key={item.href} href={item.href} className="block">
-                  <div className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                    isActive 
-                      ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_15px_rgba(249,115,22,0.1)]" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  )}>
-                    <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-primary" : "opacity-70")} />
-                    {item.label}
-                  </div>
-                </Link>
-              );
-            })}
-          </nav>
+        <div className="p-3 flex-1 overflow-y-auto space-y-4">
+          {navSections.map((section) => (
+            <div key={section.section}>
+              <div className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-1.5 px-3">
+                {section.section}
+              </div>
+              <nav className="space-y-0.5">
+                {section.items.map((item) => {
+                  const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+                  return (
+                    <Link key={item.href} href={item.href} className="block">
+                      <div className={cn(
+                        "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                        isActive
+                          ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_12px_rgba(249,115,22,0.08)]"
+                          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      )}>
+                        <item.icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-primary" : "opacity-70")} />
+                        <span className="truncate text-xs">{item.label}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
         </div>
         
         <div className="p-4 border-t border-border/50 space-y-1">

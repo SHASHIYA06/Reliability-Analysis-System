@@ -13,6 +13,12 @@ import Reports from "@/pages/reports";
 import Fleet from "@/pages/fleet";
 import Scenarios from "@/pages/scenarios";
 import NCR from "@/pages/ncr";
+import EIR from "@/pages/eir";
+import RSOI from "@/pages/rsoi";
+import DLP from "@/pages/dlp";
+import Tools from "@/pages/tools";
+import GatePass from "@/pages/gate-pass";
+import Inventory from "@/pages/inventory";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +45,12 @@ function AppRouter() {
         <Route path="/fleet" component={Fleet} />
         <Route path="/ncr" component={NCR} />
         <Route path="/scenarios" component={Scenarios} />
+        <Route path="/eir" component={EIR} />
+        <Route path="/rsoi" component={RSOI} />
+        <Route path="/dlp" component={DLP} />
+        <Route path="/tools" component={Tools} />
+        <Route path="/gate-pass" component={GatePass} />
+        <Route path="/inventory" component={Inventory} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
