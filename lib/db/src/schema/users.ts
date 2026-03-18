@@ -1,6 +1,6 @@
 import { pgTable, serial, text, varchar, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "engineer", "officer", "data-entry"]);
 
