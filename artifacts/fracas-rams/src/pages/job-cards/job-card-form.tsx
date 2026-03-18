@@ -29,83 +29,85 @@ import { API_BASE as BASE_API } from "@/lib/api-base";
 
 const YES_NO = [
   { value: "yes", label: "Yes" },
-  { value: "no",  label: "No" },
+  { value: "no", label: "No" },
 ];
 
 const USER_OPTIONS = BEML_USERS.filter(u => u.role !== "admin").map(u => ({ value: u.name, label: `${u.name} (${u.id})` }));
 const ALL_USER_OPTIONS = BEML_USERS.map(u => ({ value: u.name, label: `${u.name} (${u.id})` }));
 
 const formSchema = z.object({
-  depot:                    z.string().optional(),
-  orderType:                z.string().optional(),
-  trainId:                  z.string().min(1, "Train is required"),
-  trainSet:                 z.string().optional(),
-  carNumber:                z.string().optional(),
-  jobCardIssuedTo:          z.string().optional(),
-  organization:             z.string().optional(),
-  issuedDate:               z.string().optional(),
-  issuedTime:               z.string().optional(),
-  failureDate:              z.string().min(1, "Failure date is required"),
-  failureTime:              z.string().optional(),
-  depotArrivalDate:         z.string().optional(),
-  depotArrivalTime:         z.string().optional(),
-  expectedCompleteDate:     z.string().optional(),
-  expectedCompleteTime:     z.string().optional(),
-  jobCardCloseDate:         z.string().optional(),
-  jobCardCloseTime:         z.string().optional(),
-  reportingLocation:        z.string().optional(),
-  trainDistanceAtFailure:   z.coerce.number().optional(),
-  systemCode:               z.string().min(1, "System is required"),
-  subsystemCode:            z.string().optional(),
-  equipment:                z.string().optional(),
-  component:                z.string().optional(),
-  parts:                    z.string().optional(),
-  equipmentPartNumber:      z.string().optional(),
-  ncrNumber:                z.string().optional(),
-  serialNumber:             z.string().optional(),
-  failureName:              z.string().optional(),
-  failureDescription:       z.string().min(3, "Description must be at least 3 characters"),
-  failureLocation:          z.string().optional(),
-  failureCategory:          z.string().optional(),
-  failureClass:             z.enum(["relevant", "non-relevant", "service-failure"]),
-  reportedBy:               z.string().optional(),
-  inspector:                z.string().optional(),
-  jobOperatingConditions:   z.string().optional(),
-  effectsOnService:         z.string().optional(),
-  workPending:              z.string().optional(),
-  canBeEnergized:           z.string().optional(),
-  canBeMoved:               z.string().optional(),
-  withdrawalRequired:       z.string().optional(),
-  withdrawalReason:         z.string().optional(),
-  scenarioCode:             z.string().optional(),
-  delay:                    z.string().optional(),
-  delayTime:                z.string().optional(),
-  serviceDistinction:       z.string().optional(),
-  delayDuration:            z.string().optional(),
-  serviceChecks:            z.string().optional(),
-  mainLineAction:           z.string().optional(),
-  inspectionInCharge:       z.string().optional(),
-  sicRequired:              z.string().optional(),
-  sicVerifier:              z.string().optional(),
-  powerBlockRequired:       z.string().optional(),
-  partReplaced:             z.string().optional(),
-  partNumber:               z.string().optional(),
-  partInSerialNumber:       z.string().optional(),
-  partOutSerialNumber:      z.string().optional(),
-  componentsTakenOutDate:   z.string().optional(),
-  componentsTakenOutSrNo:   z.string().optional(),
-  componentsTakenInDate:    z.string().optional(),
-  componentsTakenInSrNo:    z.string().optional(),
-  carLiftingRequired:       z.string().optional(),
-  noOfMen:                  z.coerce.number().optional(),
-  repairDurationMinutes:    z.coerce.number().optional(),
-  rootCause:                z.string().optional(),
-  actionTaken:              z.string().optional(),
-  correctiveAction:         z.string().optional(),
-  actionEndorsementName:    z.string().optional(),
-  actionEndorsementDate:    z.string().optional(),
-  notes:                    z.string().optional(),
-  status:                   z.enum(["open", "in-progress", "closed"]),
+  jobCardNumber: z.string().optional(),
+  fracasNumber: z.string().optional(),
+  depot: z.string().optional(),
+  orderType: z.string().optional(),
+  trainId: z.string().min(1, "Train is required"),
+  trainSet: z.string().optional(),
+  carNumber: z.string().optional(),
+  jobCardIssuedTo: z.string().optional(),
+  organization: z.string().optional(),
+  issuedDate: z.string().optional(),
+  issuedTime: z.string().optional(),
+  failureDate: z.string().min(1, "Failure date is required"),
+  failureTime: z.string().optional(),
+  depotArrivalDate: z.string().optional(),
+  depotArrivalTime: z.string().optional(),
+  expectedCompleteDate: z.string().optional(),
+  expectedCompleteTime: z.string().optional(),
+  jobCardCloseDate: z.string().optional(),
+  jobCardCloseTime: z.string().optional(),
+  reportingLocation: z.string().optional(),
+  trainDistanceAtFailure: z.coerce.number().optional(),
+  systemCode: z.string().min(1, "System is required"),
+  subsystemCode: z.string().optional(),
+  equipment: z.string().optional(),
+  component: z.string().optional(),
+  parts: z.string().optional(),
+  equipmentPartNumber: z.string().optional(),
+  ncrNumber: z.string().optional(),
+  serialNumber: z.string().optional(),
+  failureName: z.string().optional(),
+  failureDescription: z.string().min(3, "Description must be at least 3 characters"),
+  failureLocation: z.string().optional(),
+  failureCategory: z.string().optional(),
+  failureClass: z.enum(["relevant", "non-relevant", "service-failure"]),
+  reportedBy: z.string().optional(),
+  inspector: z.string().optional(),
+  jobOperatingConditions: z.string().optional(),
+  effectsOnService: z.string().optional(),
+  workPending: z.string().optional(),
+  canBeEnergized: z.string().optional(),
+  canBeMoved: z.string().optional(),
+  withdrawalRequired: z.string().optional(),
+  withdrawalReason: z.string().optional(),
+  scenarioCode: z.string().optional(),
+  delay: z.string().optional(),
+  delayTime: z.string().optional(),
+  serviceDistinction: z.string().optional(),
+  delayDuration: z.string().optional(),
+  serviceChecks: z.string().optional(),
+  mainLineAction: z.string().optional(),
+  inspectionInCharge: z.string().optional(),
+  sicRequired: z.string().optional(),
+  sicVerifier: z.string().optional(),
+  powerBlockRequired: z.string().optional(),
+  partReplaced: z.string().optional(),
+  partNumber: z.string().optional(),
+  partInSerialNumber: z.string().optional(),
+  partOutSerialNumber: z.string().optional(),
+  componentsTakenOutDate: z.string().optional(),
+  componentsTakenOutSrNo: z.string().optional(),
+  componentsTakenInDate: z.string().optional(),
+  componentsTakenInSrNo: z.string().optional(),
+  carLiftingRequired: z.string().optional(),
+  noOfMen: z.coerce.number().optional(),
+  repairDurationHours: z.coerce.number().optional(),
+  rootCause: z.string().optional(),
+  actionTaken: z.string().optional(),
+  correctiveAction: z.string().optional(),
+  actionEndorsementName: z.string().optional(),
+  actionEndorsementDate: z.string().optional(),
+  notes: z.string().optional(),
+  status: z.enum(["open", "in-progress", "closed"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -152,86 +154,88 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      depot:                  (initialData as any)?.depot || "",
-      orderType:              (initialData as any)?.orderType || "",
-      trainId:                initialData?.trainId || "",
-      trainSet:               (initialData as any)?.trainSet || "",
-      carNumber:              (initialData as any)?.carNumber || "",
-      jobCardIssuedTo:        (initialData as any)?.jobCardIssuedTo || user?.name || "",
-      organization:           (initialData as any)?.organization || "BEML",
-      issuedDate:             (initialData as any)?.issuedDate || format(new Date(), "yyyy-MM-dd"),
-      issuedTime:             (initialData as any)?.issuedTime || format(new Date(), "HH:mm"),
-      failureDate:            initialData?.failureDate ? format(new Date(initialData.failureDate), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
-      failureTime:            initialData?.failureTime || "",
-      depotArrivalDate:       (initialData as any)?.depotArrivalDate || "",
-      depotArrivalTime:       (initialData as any)?.depotArrivalTime || "",
-      expectedCompleteDate:   (initialData as any)?.expectedCompleteDate || "",
-      expectedCompleteTime:   (initialData as any)?.expectedCompleteTime || "",
-      jobCardCloseDate:       (initialData as any)?.jobCardCloseDate || "",
-      jobCardCloseTime:       (initialData as any)?.jobCardCloseTime || "",
-      reportingLocation:      (initialData as any)?.reportingLocation || "",
+      jobCardNumber: (initialData as any)?.jobCardNumber || "",
+      fracasNumber: (initialData as any)?.fracasNumber || "",
+      depot: (initialData as any)?.depot || "",
+      orderType: (initialData as any)?.orderType || "",
+      trainId: initialData?.trainId || "",
+      trainSet: (initialData as any)?.trainSet || "",
+      carNumber: (initialData as any)?.carNumber || "",
+      jobCardIssuedTo: (initialData as any)?.jobCardIssuedTo || user?.name || "",
+      organization: (initialData as any)?.organization || "BEML",
+      issuedDate: (initialData as any)?.issuedDate || format(new Date(), "yyyy-MM-dd"),
+      issuedTime: (initialData as any)?.issuedTime || format(new Date(), "HH:mm"),
+      failureDate: initialData?.failureDate ? format(new Date(initialData.failureDate), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
+      failureTime: initialData?.failureTime || "",
+      depotArrivalDate: (initialData as any)?.depotArrivalDate || "",
+      depotArrivalTime: (initialData as any)?.depotArrivalTime || "",
+      expectedCompleteDate: (initialData as any)?.expectedCompleteDate || "",
+      expectedCompleteTime: (initialData as any)?.expectedCompleteTime || "",
+      jobCardCloseDate: (initialData as any)?.jobCardCloseDate || "",
+      jobCardCloseTime: (initialData as any)?.jobCardCloseTime || "",
+      reportingLocation: (initialData as any)?.reportingLocation || "",
       trainDistanceAtFailure: initialData?.trainDistanceAtFailure || undefined,
-      systemCode:             initialData?.systemCode || "",
-      subsystemCode:          initialData?.subsystemCode || "",
-      equipment:              (initialData as any)?.equipment || "",
-      component:              (initialData as any)?.component || "",
-      parts:                  (initialData as any)?.parts || "",
-      equipmentPartNumber:    (initialData as any)?.equipmentPartNumber || "",
-      ncrNumber:              (initialData as any)?.ncrNumber || "",
-      serialNumber:           (initialData as any)?.serialNumber || "",
-      failureName:            (initialData as any)?.failureName || "",
-      failureDescription:     initialData?.failureDescription || "",
-      failureLocation:        (initialData as any)?.failureLocation || "",
-      failureCategory:        (initialData as any)?.failureCategory || "",
-      failureClass:           initialData?.failureClass || "relevant",
-      reportedBy:             (initialData as any)?.reportedBy || user?.name || "",
-      inspector:              (initialData as any)?.inspector || "",
+      systemCode: initialData?.systemCode || "",
+      subsystemCode: initialData?.subsystemCode || "",
+      equipment: (initialData as any)?.equipment || "",
+      component: (initialData as any)?.component || "",
+      parts: (initialData as any)?.parts || "",
+      equipmentPartNumber: (initialData as any)?.equipmentPartNumber || "",
+      ncrNumber: (initialData as any)?.ncrNumber || "",
+      serialNumber: (initialData as any)?.serialNumber || "",
+      failureName: (initialData as any)?.failureName || "",
+      failureDescription: initialData?.failureDescription || "",
+      failureLocation: (initialData as any)?.failureLocation || "",
+      failureCategory: (initialData as any)?.failureCategory || "",
+      failureClass: initialData?.failureClass || "relevant",
+      reportedBy: (initialData as any)?.reportedBy || user?.name || "",
+      inspector: (initialData as any)?.inspector || "",
       jobOperatingConditions: (initialData as any)?.jobOperatingConditions || "",
-      effectsOnService:       (initialData as any)?.effectsOnService || "",
-      workPending:            boolToStr((initialData as any)?.workPending),
-      canBeEnergized:         boolToStr((initialData as any)?.canBeEnergized),
-      canBeMoved:             boolToStr((initialData as any)?.canBeMoved),
-      withdrawalRequired:     boolToStr(initialData?.withdrawalRequired),
-      withdrawalReason:       initialData?.withdrawalReason || "",
-      scenarioCode:           initialData?.scenarioCode || "",
-      delay:                  boolToStr((initialData as any)?.delay),
-      delayTime:              (initialData as any)?.delayTime || "",
-      serviceDistinction:     (initialData as any)?.serviceDistinction || "",
-      delayDuration:          (initialData as any)?.delayDuration || "",
-      serviceChecks:          (initialData as any)?.serviceChecks || "",
-      mainLineAction:         (initialData as any)?.mainLineAction || "",
-      inspectionInCharge:     (initialData as any)?.inspectionInCharge || "",
-      sicRequired:            boolToStr((initialData as any)?.sicRequired),
-      sicVerifier:            (initialData as any)?.sicVerifier || "",
-      powerBlockRequired:     boolToStr((initialData as any)?.powerBlockRequired),
-      partReplaced:           initialData?.partReplaced || "",
-      partNumber:             initialData?.partNumber || "",
-      partInSerialNumber:     (initialData as any)?.partInSerialNumber || "",
-      partOutSerialNumber:    (initialData as any)?.partOutSerialNumber || "",
+      effectsOnService: (initialData as any)?.effectsOnService || "",
+      workPending: boolToStr((initialData as any)?.workPending),
+      canBeEnergized: boolToStr((initialData as any)?.canBeEnergized),
+      canBeMoved: boolToStr((initialData as any)?.canBeMoved),
+      withdrawalRequired: boolToStr(initialData?.withdrawalRequired),
+      withdrawalReason: initialData?.withdrawalReason || "",
+      scenarioCode: initialData?.scenarioCode || "",
+      delay: boolToStr((initialData as any)?.delay),
+      delayTime: (initialData as any)?.delayTime || "",
+      serviceDistinction: (initialData as any)?.serviceDistinction || "",
+      delayDuration: (initialData as any)?.delayDuration || "",
+      serviceChecks: (initialData as any)?.serviceChecks || "",
+      mainLineAction: (initialData as any)?.mainLineAction || "",
+      inspectionInCharge: (initialData as any)?.inspectionInCharge || "",
+      sicRequired: boolToStr((initialData as any)?.sicRequired),
+      sicVerifier: (initialData as any)?.sicVerifier || "",
+      powerBlockRequired: boolToStr((initialData as any)?.powerBlockRequired),
+      partReplaced: initialData?.partReplaced || "",
+      partNumber: initialData?.partNumber || "",
+      partInSerialNumber: (initialData as any)?.partInSerialNumber || "",
+      partOutSerialNumber: (initialData as any)?.partOutSerialNumber || "",
       componentsTakenOutDate: (initialData as any)?.componentsTakenOutDate || "",
       componentsTakenOutSrNo: (initialData as any)?.componentsTakenOutSrNo || "",
-      componentsTakenInDate:  (initialData as any)?.componentsTakenInDate || "",
-      componentsTakenInSrNo:  (initialData as any)?.componentsTakenInSrNo || "",
-      carLiftingRequired:     boolToStr((initialData as any)?.carLiftingRequired),
-      noOfMen:                (initialData as any)?.noOfMen || undefined,
-      repairDurationMinutes:  initialData?.repairDurationMinutes || undefined,
-      rootCause:              initialData?.rootCause || "",
-      actionTaken:            initialData?.actionTaken || "",
-      correctiveAction:       (initialData as any)?.correctiveAction || "",
-      actionEndorsementName:  (initialData as any)?.actionEndorsementName || "",
-      actionEndorsementDate:  (initialData as any)?.actionEndorsementDate || "",
-      notes:                  initialData?.notes || "",
-      status:                 initialData?.status || "open",
+      componentsTakenInDate: (initialData as any)?.componentsTakenInDate || "",
+      componentsTakenInSrNo: (initialData as any)?.componentsTakenInSrNo || "",
+      carLiftingRequired: boolToStr((initialData as any)?.carLiftingRequired),
+      noOfMen: (initialData as any)?.noOfMen || undefined,
+      repairDurationHours: initialData?.repairDurationHours ?? (initialData?.repairDurationMinutes ? initialData.repairDurationMinutes / 60 : undefined),
+      rootCause: initialData?.rootCause || "",
+      actionTaken: initialData?.actionTaken || "",
+      correctiveAction: (initialData as any)?.correctiveAction || "",
+      actionEndorsementName: (initialData as any)?.actionEndorsementName || "",
+      actionEndorsementDate: (initialData as any)?.actionEndorsementDate || "",
+      notes: initialData?.notes || "",
+      status: initialData?.status || "open",
     },
   });
 
-  const watchWorkPending      = form.watch("workPending");
-  const watchWithdrawal       = form.watch("withdrawalRequired");
-  const watchDelay            = form.watch("delay");
-  const watchOrderType        = form.watch("orderType");
-  const watchSicRequired      = form.watch("sicRequired");
+  const watchWorkPending = form.watch("workPending");
+  const watchWithdrawal = form.watch("withdrawalRequired");
+  const watchDelay = form.watch("delay");
+  const watchOrderType = form.watch("orderType");
+  const watchSicRequired = form.watch("sicRequired");
   const watchEffectsOnService = form.watch("effectsOnService");
-  const watchPartReplaced     = form.watch("partReplaced");
+  const watchPartReplaced = form.watch("partReplaced");
 
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -265,20 +269,30 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
       const system = SYSTEM_TAXONOMY.find(s => s.code === data.systemCode);
       const subsystem = system?.subsystems.find(sub => sub.code === data.subsystemCode);
 
+      // Auto-generate FRACAS number based on close date (FRACAS-YYYY-MMDD-NNNN)
+      let fracasNum = data.fracasNumber || "";
+      if (!fracasNum && data.jobCardCloseDate) {
+        const d = data.jobCardCloseDate.replace(/-/g, "");
+        fracasNum = `FRACAS-${d}-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, "0")}`;
+      }
+
       const payload = {
         ...data,
+        fracasNumber: fracasNum,
         trainNumber: train?.trainNumber || "Unknown",
         trainSet: TRAIN_NUMBER_TO_SET[train?.trainNumber || ""] || data.trainSet || "",
         systemName: system?.name || "Unknown",
         subsystemName: subsystem?.name,
-        workPending:          data.workPending === "yes",
-        canBeEnergized:       data.canBeEnergized === "yes",
-        canBeMoved:           data.canBeMoved === "yes",
-        withdrawalRequired:   data.withdrawalRequired === "yes",
-        delay:                data.delay === "yes",
-        sicRequired:          data.sicRequired === "yes",
-        powerBlockRequired:   data.powerBlockRequired === "yes",
-        carLiftingRequired:   data.carLiftingRequired === "yes",
+        repairDurationMinutes: data.repairDurationHours ? Math.round(data.repairDurationHours * 60) : undefined,
+        repairDurationHours: data.repairDurationHours,
+        workPending: data.workPending === "yes",
+        canBeEnergized: data.canBeEnergized === "yes",
+        canBeMoved: data.canBeMoved === "yes",
+        withdrawalRequired: data.withdrawalRequired === "yes",
+        delay: data.delay === "yes",
+        sicRequired: data.sicRequired === "yes",
+        powerBlockRequired: data.powerBlockRequired === "yes",
+        carLiftingRequired: data.carLiftingRequired === "yes",
         reportDate: new Date().toISOString(),
         technicianId: user?.id,
       };
@@ -299,9 +313,9 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
 
   if (!isOpen) return null;
 
-  const currentSystemObj   = SYSTEM_TAXONOMY.find(s => s.code === selectedSystem);
-  const currentSubsysObj   = currentSystemObj?.subsystems.find(s => s.code === selectedSubsystem);
-  const isPending          = createMutation.isPending || updateMutation.isPending;
+  const currentSystemObj = SYSTEM_TAXONOMY.find(s => s.code === selectedSystem);
+  const currentSubsysObj = currentSystemObj?.subsystems.find(s => s.code === selectedSubsystem);
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   const SF = ({ name, label, options, placeholder = "Select...", disabled = false }: {
     name: any; label: string; options: { value: string; label: string }[]; placeholder?: string; disabled?: boolean;
@@ -373,7 +387,7 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
               <h2 className="text-lg font-bold tracking-tight">
                 {initialData ? `Edit: ${initialData.jobCardNumber}` : "New BEML Job Card"}
               </h2>
-              <p className="text-xs text-muted-foreground">FM/RS/PPIO/01/01 · FRACAS Record</p>
+              <p className="text-xs text-muted-foreground">BEML RS-3R · FRACAS Job Card Record</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-destructive/20 hover:text-destructive">
@@ -388,6 +402,10 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
               {/* ── SECTION 1: Issuance ── */}
               <div className="space-y-4">
                 <SectionHeader icon={FileText} title="Part A — Job Card Issuance" />
+                <FieldRow>
+                  <TF name="jobCardNumber" label="JC No. (editable)" mono placeholder="e.g. JC-001 or auto-assigned" />
+                  <TF name="fracasNumber" label="FRACAS No. (auto)" mono placeholder="Auto-generated on close" />
+                </FieldRow>
                 <FieldRow>
                   <SF name="depot" label="Depot / Project" options={DEPOTS} placeholder="Select depot" />
                   <SF name="orderType" label="CM / PM / OPM *" options={ORDER_TYPES} placeholder="Select type" />
@@ -423,7 +441,7 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="__none__"><em className="text-muted-foreground">— Select —</em></SelectItem>
-                          {trains.sort((a,b)=>a.trainNumber.localeCompare(b.trainNumber)).map(t => (
+                          {trains.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber)).map(t => (
                             <SelectItem key={t.id} value={t.id}>
                               {TRAIN_NUMBER_TO_SET[t.trainNumber]} — {t.trainNumber}
                             </SelectItem>
@@ -456,8 +474,8 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
                   <TF name="expectedCompleteTime" label="Expected Complete Time" type="time" />
                 </FieldRow>
                 <FieldRow>
-                  <SF name="reportedBy" label="Reported By" options={USER_OPTIONS} placeholder="Select user" />
-                  <SF name="inspector" label="Inspector / PPIO" options={USER_OPTIONS} placeholder="Select inspector" />
+                  <SF name="reportedBy" label="Reported By" options={ALL_USER_OPTIONS} placeholder="Select reporter" />
+                  <SF name="inspector" label="Inspector" options={ALL_USER_OPTIONS} placeholder="Select inspector" />
                 </FieldRow>
               </div>
 
@@ -582,9 +600,9 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
                 <FieldRow>
                   <SF name="failureCategory" label="Failure Category" options={FAILURE_CATEGORIES} placeholder="Select category" />
                   <SF name="failureClass" label="Failure Classification *" options={[
-                    { value: "relevant",       label: "Relevant Failure" },
-                    { value: "non-relevant",   label: "Non-Relevant Failure" },
-                    { value: "service-failure",label: "Service Failure" },
+                    { value: "relevant", label: "Relevant Failure" },
+                    { value: "non-relevant", label: "Non-Relevant Failure" },
+                    { value: "service-failure", label: "Service Failure" },
                   ]} />
                 </FieldRow>
               </div>
@@ -682,11 +700,11 @@ export function JobCardForm({ isOpen, onClose, initialData, onSuccess }: JobCard
                   <TF name="noOfMen" label="No. of Men" type="number" placeholder="Number of technicians" />
                 </FieldRow>
                 <FieldRow>
-                  <TF name="repairDurationMinutes" label="Duration of Repair (Minutes)" type="number" mono />
+                  <TF name="repairDurationHours" label="Duration of Repair (Hours)" type="number" mono placeholder="e.g. 1.5" />
                   <SF name="status" label="Job Card Status *" options={[
-                    { value: "open",        label: "Open" },
+                    { value: "open", label: "Open" },
                     { value: "in-progress", label: "In Progress" },
-                    { value: "closed",      label: "Closed" },
+                    { value: "closed", label: "Closed" },
                   ]} />
                 </FieldRow>
                 <TA name="actionTaken" label="Description of Actions Taken" rows={3} placeholder="All actions performed to resolve the failure..." />

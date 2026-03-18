@@ -8,3 +8,4 @@ export * from "./dlp";
 export * from "./tools";
 export * from "./inventory";
 export * from "./gate_pass";
+export * from "./users";

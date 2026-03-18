@@ -38,6 +38,8 @@ export const failuresTable = pgTable("failures", {
   expectedCompleteTime: text("expected_complete_time"),
   closeDate: text("close_date"),
   closeTime: text("close_time"),
+  jobCardCloseDate: text("job_card_close_date"),
+  jobCardCloseTime: text("job_card_close_time"),
   reportDate: text("report_date").notNull(),
   location: text("location"),
 
@@ -49,6 +51,7 @@ export const failuresTable = pgTable("failures", {
   equipment: text("equipment"),
   equipmentPartNumber: text("equipment_part_number"),
   component: text("component"),
+  parts: text("parts"),
 
   // Failure details
   failureDescription: text("failure_description").notNull(),
@@ -81,6 +84,10 @@ export const failuresTable = pgTable("failures", {
   partInDate: text("part_in_date"),
   partOutSerialNumber: text("part_out_serial_number"),
   partOutDate: text("part_out_date"),
+  componentsTakenOutDate: text("components_taken_out_date"),
+  componentsTakenOutSrNo: text("components_taken_out_sr_no"),
+  componentsTakenInDate: text("components_taken_in_date"),
+  componentsTakenInSrNo: text("components_taken_in_sr_no"),
   partReplaced: text("part_replaced"),
   partNumber: text("part_number"),
   serialNumber: text("serial_number"),
