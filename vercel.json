@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm --filter @workspace/fracas-rams run build",
+  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/fracas-rams run build",
   "outputDirectory": "artifacts/fracas-rams/dist/public",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": null,

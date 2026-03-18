@@ -48,18 +48,30 @@ async function buildAll() {
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
   ];
-  const externals = allDeps.filter(
-    (dep) =>
-      !allowlist.includes(dep) &&
-      !(pkg.dependencies?.[dep]?.startsWith("workspace:")),
-  );
+  const externals = ["pg-native"];
 
+  // Standard server with app.listen
   await esbuild({
     entryPoints: [path.resolve(__dirname, "src/index.ts")],
     platform: "node",
     bundle: true,
     format: "cjs",
     outfile: path.resolve(distDir, "index.cjs"),
+    define: {
+      "process.env.NODE_ENV": '"production"',
+    },
+    minify: true,
+    external: externals,
+    logLevel: "info",
+  });
+
+  // Vercel serverless function export
+  await esbuild({
+    entryPoints: [path.resolve(__dirname, "src/app.ts")],
+    platform: "node",
+    bundle: true,
+    format: "cjs",
+    outfile: path.resolve(distDir, "vercel-app.cjs"),
     define: {
       "process.env.NODE_ENV": '"production"',
     },

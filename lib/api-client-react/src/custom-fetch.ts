@@ -56,11 +56,11 @@ function isJsonMediaType(mediaType: string | null): boolean {
 function isTextMediaType(mediaType: string | null): boolean {
   return Boolean(
     mediaType &&
-      (mediaType.startsWith("text/") ||
-        mediaType === "application/xml" ||
-        mediaType === "text/xml" ||
-        mediaType.endsWith("+xml") ||
-        mediaType === "application/x-www-form-urlencoded"),
+    (mediaType.startsWith("text/") ||
+      mediaType === "application/xml" ||
+      mediaType === "text/xml" ||
+      mediaType.endsWith("+xml") ||
+      mediaType === "application/x-www-form-urlencoded"),
   );
 }
 
@@ -167,7 +167,7 @@ export class ResponseParseError extends Error {
   ) {
     super(
       `Failed to parse response from ${requestInfo.method} ${response.url || requestInfo.url} ` +
-        `(${response.status} ${response.statusText}) as JSON`,
+      `(${response.status} ${response.statusText}) as JSON`,
     );
     Object.setPrototypeOf(this, new.target.prototype);
 
@@ -249,7 +249,7 @@ async function parseSuccessBody(
   }
 
   const effectiveType =
-    responseType === "auto" ? inferResponseType(response) : responseType;
+    responseType === "auto" ? (requestInfo.url.includes("/api/") ? "json" : inferResponseType(response)) : responseType;
 
   switch (effectiveType) {
     case "json":
@@ -264,7 +264,7 @@ async function parseSuccessBody(
       if (typeof response.blob !== "function") {
         throw new TypeError(
           "Blob responses are not supported in this runtime. " +
-            "Use responseType \"json\" or \"text\" instead.",
+          "Use responseType \"json\" or \"text\" instead.",
         );
       }
       return response.blob();
