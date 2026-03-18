@@ -279,7 +279,8 @@ export default function JobCards() {
   const { toast } = useToast();
 
   const filteredFailures = useMemo(() => {
-    return (failures as any[]).filter((f: any) => {
+    const arr = Array.isArray(failures) ? failures : []; 
+      return (arr as any[]).filter((f: any) => {
       const matchSearch = !searchTerm || [
         f.jobCardNumber, f.fracasNumber, f.trainNumber, f.trainSet, f.carNumber,
         f.systemName, f.subsystemName, f.failureDescription, f.jobCardIssuedTo,
