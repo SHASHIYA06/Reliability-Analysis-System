@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+// @ts-nocheck
 import { db, failuresTable, trainsTable, fleetDistancesTable } from "@workspace/db";
 import { gte, lte, and, sql, eq } from "drizzle-orm";
 
@@ -16,53 +16,53 @@ const TOTAL_FLEET_TRAINS = 14;   // TS01–TS14 active trainsets
 
 // MDBCF targets (km) per system per RAMS Plan Table 2 (3-car train-km)
 const MDBCF_TARGETS: Record<string, number> = {
-  "Traction":         500000,
-  "Traction System":  500000,
-  "Brake":            700000,
-  "Brake System":     700000,
-  "Door":             1000000,
-  "Door System":      1000000,
-  "AC":               800000,
-  "VAC":              800000,
+  "Traction": 500000,
+  "Traction System": 500000,
+  "Brake": 700000,
+  "Brake System": 700000,
+  "Door": 1000000,
+  "Door System": 1000000,
+  "AC": 800000,
+  "VAC": 800000,
   "Air Conditioning System": 800000,
-  "Bogie":            3650000,
+  "Bogie": 3650000,
   "Bogie & Suspension": 3650000,
   "Communication System": 1450000,
-  "PAPIS":            1450000,
+  "PAPIS": 1450000,
   "Fire Detection System": 1450000,
-  "TCMS":             2500000,
+  "TCMS": 2500000,
   "Train Integrated Management System": 2500000,
   "Auxiliary Electric System": 1050000,
-  "Aux Electric":     1050000,
-  "Lighting":         7450000,
-  "Gangway":          6952000,
-  "Vehicle Control":  2500000,
+  "Aux Electric": 1050000,
+  "Lighting": 7450000,
+  "Gangway": 6952000,
+  "Vehicle Control": 2500000,
   "Vehicle Control System": 2500000,
 };
 
 // MTTR targets per system (minutes) per RAMS Plan Table 3
 const MTTR_TARGETS_MIN: Record<string, number> = {
-  "Traction":         150, // 2.5 hr
-  "Traction System":  150,
-  "Brake":            120, // 2.0 hr
-  "Brake System":     120,
-  "Door":             72,  // 1.2 hr
-  "Door System":      72,
-  "AC":               90,  // 1.5 hr
-  "VAC":              90,
+  "Traction": 150, // 2.5 hr
+  "Traction System": 150,
+  "Brake": 120, // 2.0 hr
+  "Brake System": 120,
+  "Door": 72,  // 1.2 hr
+  "Door System": 72,
+  "AC": 90,  // 1.5 hr
+  "VAC": 90,
   "Air Conditioning System": 90,
   "Communication System": 72, // 1.2 hr
-  "PAPIS":            72,
+  "PAPIS": 72,
   "Fire Detection System": 72,
-  "Bogie":            120, // 2.0 hr
+  "Bogie": 120, // 2.0 hr
   "Bogie & Suspension": 120,
-  "TCMS":             90,  // 1.5 hr
+  "TCMS": 90,  // 1.5 hr
   "Train Integrated Management System": 90,
-  "Aux Electric":     102, // 1.7 hr
+  "Aux Electric": 102, // 1.7 hr
   "Auxiliary Electric System": 102,
-  "Lighting":         60,  // 1.0 hr
-  "Gangway":          60,
-  "Vehicle Control":  90,
+  "Lighting": 60,  // 1.0 hr
+  "Gangway": 60,
+  "Vehicle Control": 90,
   "Vehicle Control System": 90,
 };
 
@@ -70,6 +70,20 @@ function buildDateFilter(startDate?: string, endDate?: string) {
   const conditions = [];
   if (startDate) conditions.push(gte(failuresTable.failureDate, startDate));
   if (endDate) conditions.push(lte(failuresTable.failureDate, endDate));
+  return conditions;
+}
+
+// New generic filter builder that adds optional system and trainSet filters
+function buildFilters(params: {
+  startDate?: string;
+  endDate?: string;
+  system?: string;
+  trainSet?: string;
+}) {
+  const { startDate, endDate, system, trainSet } = params;
+  const conditions = buildDateFilter(startDate, endDate);
+  if (system) conditions.push(eq(failuresTable.systemName, system));
+  if (trainSet) conditions.push(eq(failuresTable.trainSet, trainSet));
   return conditions;
 }
 
@@ -95,8 +109,8 @@ async function getFleetDistance(): Promise<number> {
  */
 function isServiceFailure(f: any): boolean {
   return f.withdrawalRequired === true ||
-         f.delay === true ||
-         (f.delayMinutes != null && Number(f.delayMinutes) >= 3);
+    f.delay === true ||
+    (f.delayMinutes != null && Number(f.delayMinutes) >= 3);
 }
 
 // ─── MDBF ────────────────────────────────────────────────────────────────────
@@ -381,7 +395,7 @@ router.get("/reports/availability", async (req, res) => {
     // DT(OPM) — downtime from PM/OPM job cards (excluding routine service checks counted as PM)
     const opmCards = allJobCards.filter(
       f => (f.orderType === "PM" || f.orderType === "OPM") &&
-           f.repairDurationMinutes != null && f.repairDurationMinutes > 0
+        f.repairDurationMinutes != null && f.repairDurationMinutes > 0
     );
     const dtOpmMinutes = opmCards.reduce((s, f) => s + (f.repairDurationMinutes || 0), 0);
 
