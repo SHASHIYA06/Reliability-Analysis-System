@@ -91,6 +91,8 @@ router.post("/tools/import", async (req, res) => {
         modelNumber: sql`EXCLUDED.model_number`,
         serialNumber: sql`EXCLUDED.serial_number`,
         lastUpdated: sql`EXCLUDED.last_updated`,
+        issuedTo: sql`EXCLUDED.issued_to`,
+        issuedDate: sql`EXCLUDED.issued_date`,
         updatedAt: new Date()
       }
     });

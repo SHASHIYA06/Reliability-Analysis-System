@@ -24,29 +24,29 @@ type InvItem = {
 };
 
 const INITIAL_INV: InvItem[] = [
-  { id: "INV-001", partNo: "DDU-4200",  description: "Door Drive Unit",           system: "Door System",        category: "LRU",        qty: 8,   minQty: 4,  unit: "Nos",  location: "Store-A/Rack-1",  vendor: "Faiveley",   unitCost: 85000,   lastReceived: "2025-01-15", condition: "New" },
-  { id: "INV-002", partNo: "APS-8001",  description: "Auxiliary Converter Unit",  system: "Auxiliary Electric", category: "LRU",        qty: 3,   minQty: 2,  unit: "Nos",  location: "Store-A/Rack-2",  vendor: "SMA",        unitCost: 320000,  lastReceived: "2024-11-10", condition: "New" },
-  { id: "INV-003", partNo: "SHOE-001",  description: "Current Collector Shoe",    system: "Traction System",    category: "Consumable", qty: 48,  minQty: 24, unit: "Nos",  location: "Store-B/Bin-5",   vendor: "Schunk",     unitCost: 12000,   lastReceived: "2025-02-20", condition: "New" },
-  { id: "INV-004", partNo: "HVAC-F001", description: "HVAC Filter Element",       system: "Air Conditioning",   category: "Consumable", qty: 24,  minQty: 20, unit: "Nos",  location: "Store-B/Bin-3",   vendor: "Faiveley",   unitCost: 2500,    lastReceived: "2025-03-01", condition: "New" },
-  { id: "INV-005", partNo: "ASP-2104",  description: "Air Spring Assembly",       system: "Bogie & Suspension", category: "LRU",        qty: 6,   minQty: 4,  unit: "Sets", location: "Store-C/Rack-1",  vendor: "Knorr",      unitCost: 45000,   lastReceived: "2024-12-15", condition: "New" },
-  { id: "INV-006", partNo: "TCMS-C10", description: "TCMS Central Unit",          system: "TIMS",               category: "LRU",        qty: 2,   minQty: 1,  unit: "Nos",  location: "Electronics Lab", vendor: "Mitsubishi", unitCost: 450000,  lastReceived: "2024-10-01", condition: "New" },
-  { id: "INV-007", partNo: "BRK-PAD",  description: "Brake Pad Set",              system: "Brake System",       category: "Consumable", qty: 120, minQty: 60, unit: "Sets", location: "Store-B/Bin-7",   vendor: "Knorr",      unitCost: 8500,    lastReceived: "2025-03-10", condition: "New" },
-  { id: "INV-008", partNo: "MCB-63A",  description: "MCB 63A (Protection)",       system: "Auxiliary Electric", category: "Consumable", qty: 15,  minQty: 10, unit: "Nos",  location: "Store-A/Bin-2",   vendor: "ABB",        unitCost: 1800,    lastReceived: "2025-01-20", condition: "New" },
-  { id: "INV-009", partNo: "INV-5030", description: "VVVF Traction Inverter",     system: "Traction System",    category: "LRU",        qty: 1,   minQty: 1,  unit: "Nos",  location: "Store-C/Rack-3",  vendor: "Hitachi",    unitCost: 1250000, lastReceived: "2024-09-01", condition: "Repaired" },
-  { id: "INV-010", partNo: "SEAL-DOR", description: "Door Rubber Seal (per m)",   system: "Door System",        category: "Consumable", qty: 200, minQty: 100,unit: "Mtr",  location: "Store-B/Bin-9",   vendor: "Faiveley",   unitCost: 450,     lastReceived: "2025-02-10", condition: "New" },
-  { id: "INV-011", partNo: "COMP-001", description: "Air Compressor Unit",         system: "Pneumatic System",   category: "LRU",        qty: 2,   minQty: 1,  unit: "Nos",  location: "Store-C/Rack-2",  vendor: "Knorr",      unitCost: 185000,  lastReceived: "2025-01-05", condition: "New" },
-  { id: "INV-012", partNo: "LUBR-001", description: "Wheel Flange Lubricant",      system: "Wheel & Axle",       category: "Consumable", qty: 50,  minQty: 30, unit: "Ltr",  location: "Store-B/Bin-1",   vendor: "Shell",      unitCost: 1200,    lastReceived: "2025-02-28", condition: "New" },
-  { id: "INV-013", partNo: "BTRY-001", description: "Battery Pack (110V)",         system: "Auxiliary Electric", category: "LRU",        qty: 4,   minQty: 2,  unit: "Nos",  location: "Store-A/Rack-3",  vendor: "Exide",      unitCost: 62000,   lastReceived: "2024-11-20", condition: "New" },
-  { id: "INV-014", partNo: "HORN-001", description: "Air Horn Assembly",            system: "Pneumatic System",   category: "Spare Part", qty: 6,   minQty: 3,  unit: "Nos",  location: "Store-A/Bin-4",   vendor: "Knorr",      unitCost: 8500,    lastReceived: "2025-01-10", condition: "New" },
-  { id: "INV-015", partNo: "PCBA-TCU", description: "Traction Control PCB",        system: "Traction System",    category: "LRU",        qty: 2,   minQty: 1,  unit: "Nos",  location: "Electronics Lab", vendor: "Hitachi",    unitCost: 380000,  lastReceived: "2024-08-15", condition: "New" },
+  { id: "INV-001", partNo: "DDU-4200", description: "Door Drive Unit", system: "Door System", category: "LRU", qty: 8, minQty: 4, unit: "Nos", location: "Store-A/Rack-1", vendor: "Faiveley", unitCost: 85000, lastReceived: "2025-01-15", condition: "New" },
+  { id: "INV-002", partNo: "APS-8001", description: "Auxiliary Converter Unit", system: "Auxiliary Electric", category: "LRU", qty: 3, minQty: 2, unit: "Nos", location: "Store-A/Rack-2", vendor: "SMA", unitCost: 320000, lastReceived: "2024-11-10", condition: "New" },
+  { id: "INV-003", partNo: "SHOE-001", description: "Current Collector Shoe", system: "Traction System", category: "Consumable", qty: 48, minQty: 24, unit: "Nos", location: "Store-B/Bin-5", vendor: "Schunk", unitCost: 12000, lastReceived: "2025-02-20", condition: "New" },
+  { id: "INV-004", partNo: "HVAC-F001", description: "HVAC Filter Element", system: "Air Conditioning", category: "Consumable", qty: 24, minQty: 20, unit: "Nos", location: "Store-B/Bin-3", vendor: "Faiveley", unitCost: 2500, lastReceived: "2025-03-01", condition: "New" },
+  { id: "INV-005", partNo: "ASP-2104", description: "Air Spring Assembly", system: "Bogie & Suspension", category: "LRU", qty: 6, minQty: 4, unit: "Sets", location: "Store-C/Rack-1", vendor: "Knorr", unitCost: 45000, lastReceived: "2024-12-15", condition: "New" },
+  { id: "INV-006", partNo: "TCMS-C10", description: "TCMS Central Unit", system: "TIMS", category: "LRU", qty: 2, minQty: 1, unit: "Nos", location: "Electronics Lab", vendor: "Mitsubishi", unitCost: 450000, lastReceived: "2024-10-01", condition: "New" },
+  { id: "INV-007", partNo: "BRK-PAD", description: "Brake Pad Set", system: "Brake System", category: "Consumable", qty: 120, minQty: 60, unit: "Sets", location: "Store-B/Bin-7", vendor: "Knorr", unitCost: 8500, lastReceived: "2025-03-10", condition: "New" },
+  { id: "INV-008", partNo: "MCB-63A", description: "MCB 63A (Protection)", system: "Auxiliary Electric", category: "Consumable", qty: 15, minQty: 10, unit: "Nos", location: "Store-A/Bin-2", vendor: "ABB", unitCost: 1800, lastReceived: "2025-01-20", condition: "New" },
+  { id: "INV-009", partNo: "INV-5030", description: "VVVF Traction Inverter", system: "Traction System", category: "LRU", qty: 1, minQty: 1, unit: "Nos", location: "Store-C/Rack-3", vendor: "Hitachi", unitCost: 1250000, lastReceived: "2024-09-01", condition: "Repaired" },
+  { id: "INV-010", partNo: "SEAL-DOR", description: "Door Rubber Seal (per m)", system: "Door System", category: "Consumable", qty: 200, minQty: 100, unit: "Mtr", location: "Store-B/Bin-9", vendor: "Faiveley", unitCost: 450, lastReceived: "2025-02-10", condition: "New" },
+  { id: "INV-011", partNo: "COMP-001", description: "Air Compressor Unit", system: "Pneumatic System", category: "LRU", qty: 2, minQty: 1, unit: "Nos", location: "Store-C/Rack-2", vendor: "Knorr", unitCost: 185000, lastReceived: "2025-01-05", condition: "New" },
+  { id: "INV-012", partNo: "LUBR-001", description: "Wheel Flange Lubricant", system: "Wheel & Axle", category: "Consumable", qty: 50, minQty: 30, unit: "Ltr", location: "Store-B/Bin-1", vendor: "Shell", unitCost: 1200, lastReceived: "2025-02-28", condition: "New" },
+  { id: "INV-013", partNo: "BTRY-001", description: "Battery Pack (110V)", system: "Auxiliary Electric", category: "LRU", qty: 4, minQty: 2, unit: "Nos", location: "Store-A/Rack-3", vendor: "Exide", unitCost: 62000, lastReceived: "2024-11-20", condition: "New" },
+  { id: "INV-014", partNo: "HORN-001", description: "Air Horn Assembly", system: "Pneumatic System", category: "Spare Part", qty: 6, minQty: 3, unit: "Nos", location: "Store-A/Bin-4", vendor: "Knorr", unitCost: 8500, lastReceived: "2025-01-10", condition: "New" },
+  { id: "INV-015", partNo: "PCBA-TCU", description: "Traction Control PCB", system: "Traction System", category: "LRU", qty: 2, minQty: 1, unit: "Nos", location: "Electronics Lab", vendor: "Hitachi", unitCost: 380000, lastReceived: "2024-08-15", condition: "New" },
 ];
 
 const CATEGORIES = ["LRU", "Consumable", "Spare Part", "Tool", "Other"];
 const SYSTEMS = SYSTEM_TAXONOMY.map(s => s.name);
 
 const STATUS_COLORS: Record<string, string> = {
-  OK:       "bg-green-500/10 text-green-400 border-green-500/30",
-  Low:      "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  OK: "bg-green-500/10 text-green-400 border-green-500/30",
+  Low: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
   Critical: "bg-red-500/10 text-red-400 border-red-500/30",
 };
 
@@ -70,7 +70,7 @@ export default function InventoryPage() {
   const [items, setItems] = useState<InvItem[]>([]);
 
   const fetchItems = useCallback(async () => {
-    try { const res = await fetch(`${BASE}/api/inventory`); if (res.ok) setItems(await res.json()); } catch {}
+    try { const res = await fetch(`${BASE}/api/inventory`); if (res.ok) setItems(await res.json()); } catch { }
   }, []);
   useEffect(() => { fetchItems(); }, [fetchItems]);
   const [form, setForm] = useState<typeof BLANK_FORM>({ ...BLANK_FORM });
@@ -146,37 +146,68 @@ export default function InventoryPage() {
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
       try {
-        const lines = (ev.target?.result as string).split("\n").filter(Boolean);
-        const header = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
-        let added = 0;
-        const newItems: InvItem[] = [];
+        const content = ev.target?.result as string;
+        const lines = content.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length < 2) return;
+
+        // Robust parsing
+        const parseRow = (text: string) => {
+          const result = []; let cur = ""; let inQuotes = false;
+          for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === "," && !inQuotes) { result.push(cur.trim()); cur = ""; }
+            else cur += char;
+          }
+          result.push(cur.trim()); return result;
+        };
+
+        const header = parseRow(lines[0]);
+        const records: any[] = [];
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(",").map(c => c.replace(/"/g, "").trim());
+          const cols = parseRow(lines[i]);
+          if (cols.length < 2) continue;
           const row: Record<string, string> = {};
           header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-          if (!row["Part No"] && !row["partNo"]) continue;
-          const id = `INV-${String(items.length + newItems.length + 1).padStart(3, "0")}`;
-          newItems.push({
-            id, partNo: row["Part No"] || row["partNo"] || "",
-            description: row["Description"] || row["description"] || "",
-            system: row["System"] || row["system"] || "",
-            category: row["Category"] || row["category"] || "Spare Part",
-            qty: Number(row["Qty"] || row["qty"] || 0),
-            minQty: Number(row["Min Qty"] || row["minQty"] || 0),
-            unit: row["Unit"] || row["unit"] || "Nos",
-            location: row["Location"] || row["location"] || "",
-            vendor: row["Vendor"] || row["vendor"] || "",
-            unitCost: Number(row["Unit Cost"] || row["unitCost"] || 0),
-            lastReceived: format(new Date(), "yyyy-MM-dd"),
-            condition: row["Condition"] || row["condition"] || "New",
+
+          const pNo = row["part_no"] || row["partNo"] || row["Part No"] || "";
+          const desc = row["description"] || row["Description"] || "";
+          if (!pNo || !desc) continue;
+
+          records.push({
+            id: row["id"] || undefined,
+            partNo: pNo,
+            description: desc,
+            system: row["system"] || row["System"] || "",
+            category: row["category"] || row["Category"] || "Spare Part",
+            qty: Number((row["qty"] || row["Qty"] || "0").replace(/[^\d]/g, "")),
+            minQty: Number((row["min_qty"] || row["minQty"] || "1").replace(/[^\d]/g, "")),
+            unit: row["unit"] || row["Unit"] || "Nos",
+            location: row["location"] || row["Location"] || "",
+            vendor: row["vendor"] || row["Vendor"] || "",
+            unitCost: Number((row["unit_cost"] || row["unitCost"] || "0").replace(/[^\d.]/g, "")),
+            lastReceived: row["last_received"] || row["lastReceived"] || format(new Date(), "yyyy-MM-dd"),
+            condition: row["condition"] || row["Condition"] || "New",
           });
-          added++;
         }
-        setItems(prev => [...prev, ...newItems]);
-        toast({ title: `Imported ${added} items`, description: "Items added to inventory from CSV." });
-      } catch {
+
+        const res = await fetch(`${BASE}/api/inventory/import`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ records })
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          toast({ title: "Import Successful", description: `Imported ${result.imported} items to store.` });
+          fetchItems();
+        } else {
+          const err = await res.json();
+          toast({ title: "Import Failed", description: err.error || "Unknown error", variant: "destructive" });
+        }
+      } catch (err: any) {
         toast({ title: "Import Error", description: "Could not parse CSV file.", variant: "destructive" });
       }
     };
@@ -277,9 +308,9 @@ export default function InventoryPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total Items",     value: items.length,                         color: "text-foreground" },
-          { label: "Low Stock",       value: lowStockItems.length,                  color: lowStockItems.length > 0 ? "text-yellow-400" : "text-green-400" },
-          { label: "Zero Stock",      value: items.filter(i => i.qty === 0).length, color: items.filter(i => i.qty === 0).length > 0 ? "text-red-400" : "text-green-400" },
+          { label: "Total Items", value: items.length, color: "text-foreground" },
+          { label: "Low Stock", value: lowStockItems.length, color: lowStockItems.length > 0 ? "text-yellow-400" : "text-green-400" },
+          { label: "Zero Stock", value: items.filter(i => i.qty === 0).length, color: items.filter(i => i.qty === 0).length > 0 ? "text-red-400" : "text-green-400" },
           { label: "Inventory Value", value: `₹${(totalValue / 100000).toFixed(1)}L`, color: "text-primary" },
         ].map(s => (
           <Card key={s.label} className="bg-card border-border/50">

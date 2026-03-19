@@ -20,6 +20,8 @@ export const toolsTable = pgTable("tools", {
   modelNumber: text("model_number"),
   serialNumber: text("serial_number"),
   lastUpdated: text("last_updated"),
+  issuedTo: text("issued_to"),
+  issuedDate: text("issued_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

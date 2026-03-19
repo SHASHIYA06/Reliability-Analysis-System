@@ -256,33 +256,36 @@ export default function ToolsPage() {
           const row: Record<string, string> = {};
           header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
 
-          const name = row["Tool/Item Name"] || row["Name"] || row["tool_name"] || row["Tool Name"] || "";
+          const name = row["tool_name"] || row["toolName"] || row["Tool/Item Name"] || row["Name"] || row["Tool Name"] || "";
           if (!name) continue;
 
-          const toolNo = row["Item Code"] || row["Tool No."] || row["tool_number"] || row["toolNo"] || "";
-          const invId = row["Inventory ID"] || row["inventory_id"] || row["InventoryId"] || "";
-          const qtyText = row["Quantity"] || row["Qty"] || row["qty"] || "1";
+          const toolNo = row["tool_number"] || row["toolNumber"] || row["Item Code"] || row["Tool No."] || row["toolNo"] || "";
+          const toolId = row["tool_id"] || row["toolId"] || row["Inventory ID"] || row["inventory_id"] || row["InventoryId"] || "";
+          const qtyText = row["qty"] || row["Quantity"] || row["Qty"] || "1";
           const qty = parseInt(qtyText.replace(/[^\d]/g, ""), 10);
-          const rawCons = row["Consumable"] || row["consumable"] || "";
+          const rawCons = row["consumable"] || row["Consumable"] || "";
           const isCons = String(rawCons).toLowerCase() === "yes" || String(rawCons).toLowerCase() === "true" || rawCons === "1";
 
           records.push({
-            toolId: invId || toolNo || `T-${Date.now()}-${i}`,
+            id: row["id"] || undefined,
+            toolId: toolId || toolNo || `T-${Date.now()}-${i}`,
             toolName: name,
             itemCode: toolNo,
-            inventoryId: invId,
-            category: row["Category"] || row["category"] || "Other",
-            location: row["Location"] || row["location"] || "",
-            condition: row["Condition"] || row["condition"] || "Good",
+            inventoryId: toolId,
+            category: row["category"] || row["Category"] || "Other",
+            location: row["location"] || row["Location"] || "",
+            condition: row["condition"] || row["Condition"] || "Good",
             qty: isNaN(qty) ? 1 : qty,
             consumable: isCons,
-            remarks: row["Remarks"] || row["remarks"] || "",
-            referenceSpec: row["Reference Spec"] || row["reference_spec"] || "",
-            supplier: row["Supplier"] || row["supplier"] || "",
-            manufacturer: row["Manufacturer"] || row["manufacturer"] || "",
-            modelNumber: row["Model Number"] || row["model_number"] || "",
-            serialNumber: row["Serial Number"] || row["serial_number"] || "",
-            lastUpdated: row["Last Updated"] || row["last_updated"] || "",
+            calibrationDue: row["calibration_due"] || row["calibrationDue"] || row["Calibration Due"] || "",
+            remarks: row["remarks"] || row["Remarks"] || "",
+            issuedTo: row["issued_to"] || row["issuedTo"] || row["Assigned To"] || "",
+            referenceSpec: row["reference_spec"] || row["Reference Spec"] || "",
+            supplier: row["supplier"] || row["Supplier"] || "",
+            manufacturer: row["manufacturer"] || row["Manufacturer"] || "",
+            modelNumber: row["model_number"] || row["Model Number"] || "",
+            serialNumber: row["serial_number"] || row["Serial Number"] || "",
+            lastUpdated: row["last_updated"] || row["Last Updated"] || "",
           });
         }
 
