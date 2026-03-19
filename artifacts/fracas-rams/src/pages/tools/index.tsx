@@ -230,11 +230,28 @@ export default function ToolsPage() {
         const lines = content.split(/\r?\n/).filter(line => line.trim());
         if (lines.length < 2) return;
 
-        const header = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
+        // Helper for robust CSV row parsing (handles quotes and commas)
+        const parseRow = (text: string) => {
+          const result = [];
+          let cur = "";
+          let inQuotes = false;
+          for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === "," && !inQuotes) {
+              result.push(cur.trim());
+              cur = "";
+            } else cur += char;
+          }
+          result.push(cur.trim());
+          return result;
+        };
+
+        const header = parseRow(lines[0]);
         const records: any[] = [];
 
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(",").map(c => c.replace(/"/g, "").trim());
+          const cols = parseRow(lines[i]);
           if (cols.length < 2) continue;
           const row: Record<string, string> = {};
           header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
@@ -244,7 +261,8 @@ export default function ToolsPage() {
 
           const toolNo = row["Item Code"] || row["Tool No."] || row["tool_number"] || row["toolNo"] || "";
           const invId = row["Inventory ID"] || row["inventory_id"] || row["InventoryId"] || "";
-          const qty = parseInt(row["Quantity"] || row["Qty"] || row["qty"] || "1", 10);
+          const qtyText = row["Quantity"] || row["Qty"] || row["qty"] || "1";
+          const qty = parseInt(qtyText.replace(/[^\d]/g, ""), 10);
           const rawCons = row["Consumable"] || row["consumable"] || "";
           const isCons = String(rawCons).toLowerCase() === "yes" || String(rawCons).toLowerCase() === "true" || rawCons === "1";
 
