@@ -3,11 +3,11 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { API_BASE as BASE } from "@/lib/api-base";
 
 function dbToTool(r: any): Tool {
-  return { id: r.id, name: r.toolName || "", toolNo: r.toolNumber || r.toolId || "", category: r.category || "", location: r.location || "", condition: r.condition || "Good", calibrationDue: r.calibrationDue || "", assignedTo: r.issuedTo || "", qty: r.qty || 1, remarks: r.remarks || "" };
+  return { id: r.id, name: r.toolName || "", toolNo: r.toolNumber || r.toolId || "", category: r.category || "", location: r.location || "", condition: r.condition || "Good", calibrationDue: r.calibrationDue || "", assignedTo: r.issuedTo || "", qty: r.qty || 1, remarks: r.remarks || "", consumable: !!r.consumable };
 }
 
 function toolToDb(t: Tool): any {
-  return { id: t.id, toolId: t.toolNo, toolName: t.name, toolNumber: t.toolNo, category: t.category, location: t.location, condition: t.condition, calibrationDue: t.calibrationDue, issuedTo: t.assignedTo, qty: t.qty, remarks: t.remarks };
+  return { id: t.id, toolId: t.toolNo, toolName: t.name, toolNumber: t.toolNo, category: t.category, location: t.location, condition: t.condition, calibrationDue: t.calibrationDue, issuedTo: t.assignedTo, qty: t.qty, remarks: t.remarks, consumable: t.consumable };
 }
 import { format } from "date-fns";
 import { Wrench, Plus, Search, Download, AlertCircle, Upload, Edit2, Trash2, ArrowRightLeft, MoreVertical, CheckCircle } from "lucide-react";
@@ -25,38 +25,41 @@ import {
 type Tool = {
   id: string; name: string; toolNo: string; category: string; location: string;
   condition: string; calibrationDue: string; assignedTo: string; qty: number; remarks: string;
+  consumable?: boolean;
 };
 
 const INITIAL_TOOLS: Tool[] = [
-  { id: "TOOL-001", name: "Digital Torque Wrench",      toolNo: "TW-001", category: "Mechanical",    location: "Tool Room A",     condition: "Good",     calibrationDue: "2025-06-30", assignedTo: "",                    qty: 2, remarks: "" },
-  { id: "TOOL-002", name: "Multimeter (Fluke 87V)",     toolNo: "MM-001", category: "Electrical",    location: "Tool Room A",     condition: "Good",     calibrationDue: "2025-09-30", assignedTo: "AKHILESH KUMAR YADAV",qty: 1, remarks: "Issued to technician" },
-  { id: "TOOL-003", name: "Hydraulic Jack (10T)",        toolNo: "HJ-001", category: "Mechanical",    location: "Bogie Bay",       condition: "Good",     calibrationDue: "",           assignedTo: "",                    qty: 2, remarks: "" },
-  { id: "TOOL-004", name: "Oscilloscope (Tektronix)",   toolNo: "OS-001", category: "Electrical",    location: "Electronics Lab", condition: "Good",     calibrationDue: "2025-12-31", assignedTo: "",                    qty: 1, remarks: "" },
-  { id: "TOOL-005", name: "Megger (Insulation Tester)", toolNo: "MG-001", category: "Electrical",    location: "Tool Room B",     condition: "Fair",     calibrationDue: "2025-03-31", assignedTo: "",                    qty: 1, remarks: "Calibration overdue" },
-  { id: "TOOL-006", name: "Bogie Lifting Equipment",    toolNo: "BL-001", category: "Heavy",         location: "Workshop",        condition: "Good",     calibrationDue: "2026-01-31", assignedTo: "",                    qty: 1, remarks: "" },
-  { id: "TOOL-007", name: "Door Force Gauge",            toolNo: "DG-001", category: "Measurement",  location: "Tool Room A",     condition: "Good",     calibrationDue: "2025-07-31", assignedTo: "",                    qty: 1, remarks: "" },
-  { id: "TOOL-008", name: "Air Pressure Test Kit",       toolNo: "PT-001", category: "Pneumatic",    location: "Tool Room A",     condition: "Good",     calibrationDue: "2025-08-31", assignedTo: "",                    qty: 2, remarks: "" },
-  { id: "TOOL-009", name: "Wheel Profile Gauge",         toolNo: "WP-001", category: "Measurement",  location: "Workshop",        condition: "Good",     calibrationDue: "2026-03-31", assignedTo: "",                    qty: 1, remarks: "" },
-  { id: "TOOL-010", name: "Clamp Meter (Fluke 376)",    toolNo: "CM-001", category: "Electrical",    location: "Tool Room A",     condition: "Good",     calibrationDue: "2025-10-31", assignedTo: "",                    qty: 3, remarks: "" },
-  { id: "TOOL-011", name: "Pantograph Height Gauge",    toolNo: "PH-001", category: "Measurement",  location: "Workshop",        condition: "Good",     calibrationDue: "2026-06-30", assignedTo: "",                    qty: 1, remarks: "" },
-  { id: "TOOL-012", name: "IR Temperature Gun",          toolNo: "IT-001", category: "Electrical",    location: "Tool Room A",     condition: "Good",     calibrationDue: "2025-11-30", assignedTo: "",                    qty: 2, remarks: "" },
-  { id: "TOOL-013", name: "Vibration Analyzer",          toolNo: "VA-001", category: "Measurement",  location: "Electronics Lab", condition: "Good",     calibrationDue: "2026-02-28", assignedTo: "",                    qty: 1, remarks: "" },
-  { id: "TOOL-014", name: "Portable Welding Set",        toolNo: "WS-001", category: "Heavy",         location: "Workshop",        condition: "Fair",     calibrationDue: "",           assignedTo: "",                    qty: 1, remarks: "Arc welder" },
-  { id: "TOOL-015", name: "Locking Plier Set",           toolNo: "LP-001", category: "Mechanical",    location: "Tool Room A",     condition: "Good",     calibrationDue: "",           assignedTo: "",                    qty: 3, remarks: "" },
-  { id: "TOOL-016", name: "Spirit Level (600mm)",        toolNo: "SL-001", category: "Measurement",  location: "Tool Room B",     condition: "Good",     calibrationDue: "2025-12-31", assignedTo: "",                    qty: 2, remarks: "" },
-  { id: "TOOL-017", name: "Cable Stripper/Crimper Set",  toolNo: "CS-001", category: "Electrical",    location: "Tool Room B",     condition: "Good",     calibrationDue: "",           assignedTo: "",                    qty: 2, remarks: "" },
-  { id: "TOOL-018", name: "Hydraulic Torque Multiplier", toolNo: "HT-001", category: "Mechanical",    location: "Bogie Bay",       condition: "Good",     calibrationDue: "2026-04-30", assignedTo: "",                    qty: 1, remarks: "" },
-  { id: "TOOL-019", name: "AC/DC Power Analyser",        toolNo: "PA-001", category: "Electrical",    location: "Electronics Lab", condition: "Good",     calibrationDue: "2025-09-30", assignedTo: "",                    qty: 1, remarks: "" },
-  { id: "TOOL-020", name: "Brush Cutter (for track)",    toolNo: "BC-001", category: "Mechanical",    location: "Workshop",        condition: "Fair",     calibrationDue: "",           assignedTo: "",                    qty: 1, remarks: "Track maintenance use" },
+  { id: "TOOL-001", name: "Digital Torque Wrench", toolNo: "TW-001", category: "Mechanical", location: "Tool Room A", condition: "Good", calibrationDue: "2025-06-30", assignedTo: "", qty: 2, remarks: "" },
+  { id: "TOOL-002", name: "Multimeter (Fluke 87V)", toolNo: "MM-001", category: "Electrical", location: "Tool Room A", condition: "Good", calibrationDue: "2025-09-30", assignedTo: "AKHILESH KUMAR YADAV", qty: 1, remarks: "Issued to technician" },
+  { id: "TOOL-003", name: "Hydraulic Jack (10T)", toolNo: "HJ-001", category: "Mechanical", location: "Bogie Bay", condition: "Good", calibrationDue: "", assignedTo: "", qty: 2, remarks: "" },
+  { id: "TOOL-004", name: "Oscilloscope (Tektronix)", toolNo: "OS-001", category: "Electrical", location: "Electronics Lab", condition: "Good", calibrationDue: "2025-12-31", assignedTo: "", qty: 1, remarks: "" },
+  { id: "TOOL-005", name: "Megger (Insulation Tester)", toolNo: "MG-001", category: "Electrical", location: "Tool Room B", condition: "Fair", calibrationDue: "2025-03-31", assignedTo: "", qty: 1, remarks: "Calibration overdue" },
+  { id: "TOOL-006", name: "Bogie Lifting Equipment", toolNo: "BL-001", category: "Heavy", location: "Workshop", condition: "Good", calibrationDue: "2026-01-31", assignedTo: "", qty: 1, remarks: "" },
+  { id: "TOOL-007", name: "Door Force Gauge", toolNo: "DG-001", category: "Measurement", location: "Tool Room A", condition: "Good", calibrationDue: "2025-07-31", assignedTo: "", qty: 1, remarks: "" },
+  { id: "TOOL-008", name: "Air Pressure Test Kit", toolNo: "PT-001", category: "Pneumatic", location: "Tool Room A", condition: "Good", calibrationDue: "2025-08-31", assignedTo: "", qty: 2, remarks: "" },
+  { id: "TOOL-009", name: "Wheel Profile Gauge", toolNo: "WP-001", category: "Measurement", location: "Workshop", condition: "Good", calibrationDue: "2026-03-31", assignedTo: "", qty: 1, remarks: "" },
+  { id: "TOOL-010", name: "Clamp Meter (Fluke 376)", toolNo: "CM-001", category: "Electrical", location: "Tool Room A", condition: "Good", calibrationDue: "2025-10-31", assignedTo: "", qty: 3, remarks: "" },
+  { id: "TOOL-011", name: "Pantograph Height Gauge", toolNo: "PH-001", category: "Measurement", location: "Workshop", condition: "Good", calibrationDue: "2026-06-30", assignedTo: "", qty: 1, remarks: "" },
+  { id: "TOOL-012", name: "IR Temperature Gun", toolNo: "IT-001", category: "Electrical", location: "Tool Room A", condition: "Good", calibrationDue: "2025-11-30", assignedTo: "", qty: 2, remarks: "" },
+  { id: "TOOL-013", name: "Vibration Analyzer", toolNo: "VA-001", category: "Measurement", location: "Electronics Lab", condition: "Good", calibrationDue: "2026-02-28", assignedTo: "", qty: 1, remarks: "" },
+  { id: "TOOL-014", name: "Portable Welding Set", toolNo: "WS-001", category: "Heavy", location: "Workshop", condition: "Fair", calibrationDue: "", assignedTo: "", qty: 1, remarks: "Arc welder" },
+  { id: "TOOL-015", name: "Locking Plier Set", toolNo: "LP-001", category: "Mechanical", location: "Tool Room A", condition: "Good", calibrationDue: "", assignedTo: "", qty: 3, remarks: "" },
+  { id: "TOOL-016", name: "Spirit Level (600mm)", toolNo: "SL-001", category: "Measurement", location: "Tool Room B", condition: "Good", calibrationDue: "2025-12-31", assignedTo: "", qty: 2, remarks: "" },
+  { id: "TOOL-017", name: "Cable Stripper/Crimper Set", toolNo: "CS-001", category: "Electrical", location: "Tool Room B", condition: "Good", calibrationDue: "", assignedTo: "", qty: 2, remarks: "" },
+  { id: "TOOL-018", name: "Hydraulic Torque Multiplier", toolNo: "HT-001", category: "Mechanical", location: "Bogie Bay", condition: "Good", calibrationDue: "2026-04-30", assignedTo: "", qty: 1, remarks: "" },
+  { id: "TOOL-019", name: "AC/DC Power Analyser", toolNo: "PA-001", category: "Electrical", location: "Electronics Lab", condition: "Good", calibrationDue: "2025-09-30", assignedTo: "", qty: 1, remarks: "" },
+  { id: "TOOL-020", name: "Brush Cutter (for track)", toolNo: "BC-001", category: "Mechanical", location: "Workshop", condition: "Fair", calibrationDue: "", assignedTo: "", qty: 1, remarks: "Track maintenance use" },
 ];
 
-const CATEGORIES = ["Mechanical", "Electrical", "Heavy", "Measurement", "Pneumatic", "Other"];
+const CATEGORIES = ["Electrical", "Mechanical", "Measurement", "Communication", "Safety", "Diagnostic", "Inspection", "Consumable", "Precision", "Other"];
 
 const CONDITION_COLORS: Record<string, string> = {
-  Good:      "bg-green-500/10 text-green-400 border-green-500/30",
-  Fair:      "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-  Poor:      "bg-red-500/10 text-red-400 border-red-500/30",
-  Defective: "bg-red-600/20 text-red-500 border-red-600/40",
+  "Good": "bg-green-500/10 text-green-400 border-green-500/30",
+  "Damaged": "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  "Faulty": "bg-red-500/10 text-red-500 border-red-500/30",
+  "Requires Attention": "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  "Fair": "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  "Poor": "bg-red-500/10 text-red-400 border-red-500/30"
 };
 
 function getDaysLeft(date: string) {
@@ -73,11 +76,12 @@ export default function ToolsPage() {
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
   const [filterCond, setFilterCond] = useState("");
+  const [filterConsumable, setFilterConsumable] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [tools, setTools] = useState<Tool[]>([]);
 
   const fetchTools = useCallback(async () => {
-    try { const res = await fetch(`${BASE}/api/tools`); if (res.ok) { const data = await res.json(); setTools(data.map(dbToTool)); } } catch {}
+    try { const res = await fetch(`${BASE}/api/tools`); if (res.ok) { const data = await res.json(); setTools(data.map(dbToTool)); } } catch { }
   }, []);
   useEffect(() => { fetchTools(); }, [fetchTools]);
   const [editId, setEditId] = useState<string | null>(null);
@@ -88,6 +92,8 @@ export default function ToolsPage() {
   const filtered = tools.filter(t => {
     if (filterCat && t.category !== filterCat) return false;
     if (filterCond && t.condition !== filterCond) return false;
+    if (filterConsumable === "Yes" && !t.consumable) return false;
+    if (filterConsumable === "No" && t.consumable) return false;
     if (search) {
       const q = search.toLowerCase();
       if (!t.name.toLowerCase().includes(q) && !t.toolNo.toLowerCase().includes(q) && !t.location.toLowerCase().includes(q)) return false;
@@ -95,14 +101,16 @@ export default function ToolsPage() {
     return true;
   });
 
-  const overdue  = tools.filter(t => t.calibrationDue && getDaysLeft(t.calibrationDue) < 0).length;
-  const dueSoon  = tools.filter(t => t.calibrationDue && getDaysLeft(t.calibrationDue) >= 0 && getDaysLeft(t.calibrationDue) <= 30).length;
-  const issued   = tools.filter(t => t.assignedTo).length;
+  const overdue = tools.filter(t => t.calibrationDue && getDaysLeft(t.calibrationDue) < 0).length;
+  const dueSoon = tools.filter(t => t.calibrationDue && getDaysLeft(t.calibrationDue) >= 0 && getDaysLeft(t.calibrationDue) <= 30).length;
+  const issued = tools.filter(t => t.assignedTo).length;
+  const consumablesCount = tools.filter(t => t.consumable).length;
+  const consumablesQty = tools.filter(t => t.consumable).reduce((sum, t) => sum + (t.qty || 0), 0);
 
   const openAdd = () => { setEditId(null); setForm({ ...BLANK_FORM }); setShowForm(true); };
   const openEdit = (t: Tool) => {
     setEditId(t.id);
-    setForm({ name: t.name, toolNo: t.toolNo, category: t.category, location: t.location, condition: t.condition, calibrationDue: t.calibrationDue, qty: String(t.qty), remarks: t.remarks });
+    setForm({ name: t.name, toolNo: t.toolNo, category: t.category, location: t.location, condition: t.condition, calibrationDue: t.calibrationDue, qty: String(t.qty), remarks: t.remarks, consumable: t.consumable });
     setShowForm(true);
   };
 
@@ -149,8 +157,8 @@ export default function ToolsPage() {
   };
 
   const exportCSV = () => {
-    const rows = [["ID", "Name", "Tool No", "Category", "Location", "Condition", "Calibration Due", "Qty", "Assigned To", "Remarks"]];
-    for (const t of filtered) rows.push([t.id, t.name, t.toolNo, t.category, t.location, t.condition, t.calibrationDue, String(t.qty), t.assignedTo, t.remarks]);
+    const rows = [["ID", "Name", "Tool No", "Category", "Location", "Condition", "Calibration Due", "Qty", "Assigned To", "Consumable", "Remarks"]];
+    for (const t of filtered) rows.push([t.id, t.name, t.toolNo, t.category, t.location, t.condition, t.calibrationDue, String(t.qty), t.assignedTo, t.consumable ? "Yes" : "No", t.remarks]);
     const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = `Tools_Register_${format(new Date(), "yyyyMMdd")}.csv`; a.click();
@@ -171,6 +179,9 @@ export default function ToolsPage() {
           header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
           if (!row["Name"] && !row["name"]) continue;
           const id = `TOOL-${String(tools.length + newTools.length + 1).padStart(3, "0")}`;
+          const rawCons = row["Consumable"] || row["consumable"] || "";
+          const isCons = String(rawCons).toLowerCase() === "yes" || String(rawCons).toLowerCase() === "true" || rawCons === "1";
+
           newTools.push({
             id, name: row["Name"] || row["name"] || "", toolNo: row["Tool No"] || row["toolNo"] || "",
             category: row["Category"] || row["category"] || "Other",
@@ -179,6 +190,7 @@ export default function ToolsPage() {
             calibrationDue: row["Calibration Due"] || row["calibrationDue"] || "",
             qty: Number(row["Qty"] || row["qty"] || 1), assignedTo: "",
             remarks: row["Remarks"] || row["remarks"] || "",
+            consumable: isCons
           });
           added++;
         }
@@ -226,13 +238,14 @@ export default function ToolsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         {[
-          { label: "Total Tools",         value: tools.length,  color: "text-foreground" },
-          { label: "Currently Issued",    value: issued,        color: issued > 0 ? "text-yellow-400" : "text-green-400" },
-          { label: "Available",           value: tools.length - issued, color: "text-green-400" },
-          { label: "Calibration Overdue", value: overdue,       color: overdue > 0 ? "text-red-400" : "text-green-400" },
-          { label: "Due Within 30 Days",  value: dueSoon,       color: dueSoon > 0 ? "text-yellow-400" : "text-green-400" },
+          { label: "Total Asset Tools", value: tools.filter(t => !t.consumable).length, color: "text-foreground" },
+          { label: "Total Consumables", value: consumablesQty, color: "text-blue-400" },
+          { label: "Currently Issued", value: issued, color: issued > 0 ? "text-yellow-400" : "text-green-400" },
+          { label: "Available", value: (tools.filter(t => !t.consumable).length) - issued, color: "text-green-400" },
+          { label: "Calibration Overdue", value: overdue, color: overdue > 0 ? "text-red-400" : "text-green-400" },
+          { label: "Due Within 30 Days", value: dueSoon, color: dueSoon > 0 ? "text-yellow-400" : "text-green-400" },
         ].map(s => (
           <Card key={s.label} className="bg-card border-border/50">
             <CardContent className="p-3">
@@ -255,14 +268,15 @@ export default function ToolsPage() {
             {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterCond || "__all__"} onValueChange={v => setFilterCond(v === "__all__" ? "" : v)}>
-          <SelectTrigger className="w-36 bg-card border-border text-sm"><SelectValue placeholder="All Conditions" /></SelectTrigger>
+        <Select value={filterConsumable || "__all__"} onValueChange={v => setFilterConsumable(v === "__all__" ? "" : v)}>
+          <SelectTrigger className="w-36 bg-card border-border text-sm"><SelectValue placeholder="All Tracking" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">All Conditions</SelectItem>
-            {["Good", "Fair", "Poor", "Defective"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            <SelectItem value="__all__">All Tracking</SelectItem>
+            <SelectItem value="Yes">Consumables Only</SelectItem>
+            <SelectItem value="No">Non-Consumables Only</SelectItem>
           </SelectContent>
         </Select>
-        {(filterCat || filterCond || search) && <Button variant="ghost" size="sm" onClick={() => { setFilterCat(""); setFilterCond(""); setSearch(""); }}>Clear</Button>}
+        {(filterCat || filterCond || filterConsumable || search) && <Button variant="ghost" size="sm" onClick={() => { setFilterCat(""); setFilterCond(""); setFilterConsumable(""); setSearch(""); }}>Clear</Button>}
         <span className="text-xs text-muted-foreground self-center">{filtered.length} of {tools.length}</span>
       </div>
 
@@ -276,6 +290,7 @@ export default function ToolsPage() {
                 <th className="px-4 py-3 text-left">Tool No.</th>
                 <th className="px-4 py-3 text-left">Category</th>
                 <th className="px-4 py-3 text-center">Qty</th>
+                <th className="px-4 py-3 text-center">Consumable</th>
                 <th className="px-4 py-3 text-left">Location</th>
                 <th className="px-4 py-3 text-left">Condition</th>
                 <th className="px-4 py-3 text-left">Calibration Due</th>
@@ -295,6 +310,9 @@ export default function ToolsPage() {
                     <td className="px-4 py-2.5 font-mono text-xs">{t.toolNo}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{t.category}</td>
                     <td className="px-4 py-2.5 text-center">{t.qty}</td>
+                    <td className="px-4 py-2.5 text-center">
+                      {t.consumable ? <Badge className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px]">Yes</Badge> : <span className="text-xs text-muted-foreground">No</span>}
+                    </td>
                     <td className="px-4 py-2.5 text-xs">{t.location}</td>
                     <td className="px-4 py-2.5">
                       <Badge variant="outline" className={`text-[10px] ${CONDITION_COLORS[t.condition] || ""}`}>{t.condition}</Badge>
@@ -383,6 +401,10 @@ export default function ToolsPage() {
               <div>
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Quantity</label>
                 <Input type="number" value={form.qty} onChange={e => setForm(f => ({ ...f, qty: e.target.value }))} className="bg-background border-border" min="1" />
+              </div>
+              <div className="flex items-center gap-2 pt-5">
+                <input type="checkbox" id="isConsumable" checked={!!form.consumable} onChange={e => setForm(f => ({ ...f, consumable: e.target.checked }))} className="w-4 h-4 rounded border-border" />
+                <label htmlFor="isConsumable" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Mark as Consumable Item</label>
               </div>
               <div className="col-span-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Remarks</label>

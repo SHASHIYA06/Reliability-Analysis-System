@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, integer, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 export const dlpTable = pgTable("dlp_items", {
   id: text("id").primaryKey(),

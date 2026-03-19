@@ -28,6 +28,9 @@ router.post("/tools", async (req, res) => {
     const body = req.body;
     if (!body.id) body.id = `TOOL-${Date.now()}`;
     body.updatedAt = new Date();
+    if (body.consumable !== undefined) {
+      body.consumable = String(body.consumable).toLowerCase() === "true" || String(body.consumable).toLowerCase() === "yes" || body.consumable === true;
+    }
     const [row] = await db.insert(toolsTable).values(body).returning();
     res.status(201).json(row);
   } catch (err: any) {
@@ -38,6 +41,9 @@ router.post("/tools", async (req, res) => {
 router.put("/tools/:id", async (req, res) => {
   try {
     const body = { ...req.body, updatedAt: new Date() };
+    if (body.consumable !== undefined) {
+      body.consumable = String(body.consumable).toLowerCase() === "true" || String(body.consumable).toLowerCase() === "yes" || body.consumable === true;
+    }
     delete body.id;
     delete body.createdAt;
     const [row] = await db.update(toolsTable).set(body).where(eq(toolsTable.id, req.params.id)).returning();
@@ -61,7 +67,13 @@ router.post("/tools/import", async (req, res) => {
   try {
     const { records } = req.body as { records: any[] };
     if (!records?.length) { res.status(400).json({ error: "No records" }); return; }
-    const toInsert = records.map((r, i) => ({ ...r, id: r.id || `TOOL-IMP-${Date.now()}-${i}`, updatedAt: new Date() }));
+    const toInsert = records.map((r, i) => {
+      let cons = false;
+      if (r.consumable !== undefined) {
+        cons = String(r.consumable).toLowerCase() === "true" || String(r.consumable).toLowerCase() === "yes" || r.consumable === true;
+      }
+      return { ...r, consumable: cons, id: r.id || `TOOL-IMP-${Date.now()}-${i}`, updatedAt: new Date() };
+    });
     await db.insert(toolsTable).values(toInsert).onConflictDoUpdate({ target: toolsTable.id, set: { updatedAt: new Date() } });
     res.json({ imported: toInsert.length });
   } catch (err: any) {

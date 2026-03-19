@@ -1,6 +1,6 @@
-import { pgTable, text, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 export const toolsTable = pgTable("tools", {
   id: text("id").primaryKey(),
@@ -14,6 +14,7 @@ export const toolsTable = pgTable("tools", {
   issuedTo: text("issued_to"),
   issuedDate: text("issued_date"),
   qty: integer("qty").default(1),
+  consumable: boolean("consumable").default(false),
   remarks: text("remarks"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
