@@ -26,18 +26,18 @@ type DLPItem = {
 };
 
 const INITIAL_DLP: DLPItem[] = [
-  { id: "DLP-001", itemDescription: "Door Drive Unit (Passenger Door)",       partNumber: "DDU-4200",  system: "Door System",            subsystem: "Saloon Door",              trainNo: "MR601", qty: 12, dlpExpiry: "2026-06-30", vendor: "Faiveley",   status: "Active",   ncrCount: 2, replacementDue: "2026-03-01" },
-  { id: "DLP-002", itemDescription: "Auxiliary Converter Unit",                partNumber: "APS-8001",  system: "Auxiliary Electric",      subsystem: "Auxiliary Converter (APS)",trainNo: "ALL",   qty: 34, dlpExpiry: "2026-12-31", vendor: "SMA",        status: "Active",   ncrCount: 0, replacementDue: "" },
-  { id: "DLP-003", itemDescription: "TCMS Central Unit",                       partNumber: "TCMS-C10",  system: "TIMS",                    subsystem: "Control Unit",             trainNo: "ALL",   qty: 17, dlpExpiry: "2027-03-31", vendor: "Mitsubishi", status: "Active",   ncrCount: 1, replacementDue: "" },
-  { id: "DLP-004", itemDescription: "Third Rail Shoe Collector",               partNumber: "SHOE-001",  system: "Traction System",         subsystem: "Collector Shoes",          trainNo: "MR606", qty: 24, dlpExpiry: "2025-12-31", vendor: "Schunk",     status: "Expiring", ncrCount: 3, replacementDue: "2025-11-01" },
-  { id: "DLP-005", itemDescription: "Air Spring (Secondary Suspension)",       partNumber: "ASP-2104",  system: "Bogie & Suspension",      subsystem: "Secondary Suspension",     trainNo: "ALL",   qty: 68, dlpExpiry: "2026-09-30", vendor: "Knorr",      status: "Active",   ncrCount: 0, replacementDue: "" },
-  { id: "DLP-006", itemDescription: "VVVF Traction Inverter",                  partNumber: "INV-5030",  system: "Traction System",         subsystem: "Traction Inverter",        trainNo: "MR603", qty: 6,  dlpExpiry: "2026-03-31", vendor: "Hitachi",    status: "Active",   ncrCount: 1, replacementDue: "" },
-  { id: "DLP-007", itemDescription: "HVAC Compressor Unit",                    partNumber: "HVAC-C01",  system: "Air Conditioning",        subsystem: "Compressor Unit",          trainNo: "ALL",   qty: 14, dlpExpiry: "2026-06-30", vendor: "Faiveley",   status: "Active",   ncrCount: 0, replacementDue: "" },
-  { id: "DLP-008", itemDescription: "Brake Actuator Assembly",                 partNumber: "BRK-A001",  system: "Brake System",            subsystem: "Disc Brake Caliper",       trainNo: "ALL",   qty: 84, dlpExpiry: "2026-12-31", vendor: "Knorr",      status: "Active",   ncrCount: 0, replacementDue: "" },
-  { id: "DLP-009", itemDescription: "Emergency Brake Relay",                   partNumber: "EBR-001",   system: "Brake System",            subsystem: "Emergency Brake",          trainNo: "ALL",   qty: 28, dlpExpiry: "2025-09-30", vendor: "Knorr",      status: "Expiring", ncrCount: 2, replacementDue: "2025-08-01" },
-  { id: "DLP-010", itemDescription: "Pantograph Assembly",                     partNumber: "PAN-001",   system: "Pantograph",              subsystem: "Pantograph Head",          trainNo: "ALL",   qty: 14, dlpExpiry: "2027-06-30", vendor: "Wabtec",     status: "Active",   ncrCount: 0, replacementDue: "" },
-  { id: "DLP-011", itemDescription: "Master Controller Handle",               partNumber: "MCH-001",   system: "Cab Equipment",           subsystem: "Master Controller",        trainNo: "ALL",   qty: 28, dlpExpiry: "2026-06-30", vendor: "BEML",       status: "Active",   ncrCount: 1, replacementDue: "" },
-  { id: "DLP-012", itemDescription: "Traction Battery Pack",                   partNumber: "BAT-T001",  system: "Auxiliary Electric",      subsystem: "Battery System",           trainNo: "ALL",   qty: 14, dlpExpiry: "2026-09-30", vendor: "Exide",      status: "Active",   ncrCount: 0, replacementDue: "" },
+  { id: "DLP-001", itemDescription: "Door Drive Unit (Passenger Door)", partNumber: "DDU-4200", system: "Door System", subsystem: "Saloon Door", trainNo: "MR601", qty: 12, dlpExpiry: "2026-06-30", vendor: "Faiveley", status: "Active", ncrCount: 2, replacementDue: "2026-03-01" },
+  { id: "DLP-002", itemDescription: "Auxiliary Converter Unit", partNumber: "APS-8001", system: "Auxiliary Electric", subsystem: "Auxiliary Converter (APS)", trainNo: "ALL", qty: 34, dlpExpiry: "2026-12-31", vendor: "SMA", status: "Active", ncrCount: 0, replacementDue: "" },
+  { id: "DLP-003", itemDescription: "TCMS Central Unit", partNumber: "TCMS-C10", system: "TIMS", subsystem: "Control Unit", trainNo: "ALL", qty: 17, dlpExpiry: "2027-03-31", vendor: "Mitsubishi", status: "Active", ncrCount: 1, replacementDue: "" },
+  { id: "DLP-004", itemDescription: "Third Rail Shoe Collector", partNumber: "SHOE-001", system: "Traction System", subsystem: "Collector Shoes", trainNo: "MR606", qty: 24, dlpExpiry: "2025-12-31", vendor: "Schunk", status: "Expiring", ncrCount: 3, replacementDue: "2025-11-01" },
+  { id: "DLP-005", itemDescription: "Air Spring (Secondary Suspension)", partNumber: "ASP-2104", system: "Bogie & Suspension", subsystem: "Secondary Suspension", trainNo: "ALL", qty: 68, dlpExpiry: "2026-09-30", vendor: "Knorr", status: "Active", ncrCount: 0, replacementDue: "" },
+  { id: "DLP-006", itemDescription: "VVVF Traction Inverter", partNumber: "INV-5030", system: "Traction System", subsystem: "Traction Inverter", trainNo: "MR603", qty: 6, dlpExpiry: "2026-03-31", vendor: "Hitachi", status: "Active", ncrCount: 1, replacementDue: "" },
+  { id: "DLP-007", itemDescription: "HVAC Compressor Unit", partNumber: "HVAC-C01", system: "Air Conditioning", subsystem: "Compressor Unit", trainNo: "ALL", qty: 14, dlpExpiry: "2026-06-30", vendor: "Faiveley", status: "Active", ncrCount: 0, replacementDue: "" },
+  { id: "DLP-008", itemDescription: "Brake Actuator Assembly", partNumber: "BRK-A001", system: "Brake System", subsystem: "Disc Brake Caliper", trainNo: "ALL", qty: 84, dlpExpiry: "2026-12-31", vendor: "Knorr", status: "Active", ncrCount: 0, replacementDue: "" },
+  { id: "DLP-009", itemDescription: "Emergency Brake Relay", partNumber: "EBR-001", system: "Brake System", subsystem: "Emergency Brake", trainNo: "ALL", qty: 28, dlpExpiry: "2025-09-30", vendor: "Knorr", status: "Expiring", ncrCount: 2, replacementDue: "2025-08-01" },
+  { id: "DLP-010", itemDescription: "Pantograph Assembly", partNumber: "PAN-001", system: "Pantograph", subsystem: "Pantograph Head", trainNo: "ALL", qty: 14, dlpExpiry: "2027-06-30", vendor: "Wabtec", status: "Active", ncrCount: 0, replacementDue: "" },
+  { id: "DLP-011", itemDescription: "Master Controller Handle", partNumber: "MCH-001", system: "Cab Equipment", subsystem: "Master Controller", trainNo: "ALL", qty: 28, dlpExpiry: "2026-06-30", vendor: "BEML", status: "Active", ncrCount: 1, replacementDue: "" },
+  { id: "DLP-012", itemDescription: "Traction Battery Pack", partNumber: "BAT-T001", system: "Auxiliary Electric", subsystem: "Battery System", trainNo: "ALL", qty: 14, dlpExpiry: "2026-09-30", vendor: "Exide", status: "Active", ncrCount: 0, replacementDue: "" },
 ];
 
 function getDaysLeft(expiry: string) {
@@ -53,10 +53,10 @@ function getAlarmLevel(daysLeft: number, ncrCount: number) {
 }
 
 const ALARM_COLORS: Record<string, string> = {
-  expired:  "bg-red-600/20 text-red-400 border-red-600/40",
+  expired: "bg-red-600/20 text-red-400 border-red-600/40",
   critical: "bg-orange-500/15 text-orange-400 border-orange-500/30",
-  warning:  "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-  ok:       "bg-green-500/10 text-green-400 border-green-500/30",
+  warning: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  ok: "bg-green-500/10 text-green-400 border-green-500/30",
 };
 
 const ALARM_LABELS: Record<string, string> = {
@@ -80,7 +80,7 @@ export default function DLPPage() {
     try {
       const res = await fetch(`${BASE}/api/dlp`);
       if (res.ok) setItems(await res.json());
-    } catch {}
+    } catch { }
   }, []);
   useEffect(() => { fetchItems(); }, [fetchItems]);
   const [alarmEnabled, setAlarmEnabled] = useState(true);
@@ -155,34 +155,77 @@ export default function DLPPage() {
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
       try {
-        const lines = (ev.target?.result as string).split("\n").filter(Boolean);
-        const header = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
-        let added = 0;
-        const newItems: DLPItem[] = [];
+        const content = ev.target?.result as string;
+        const lines = content.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length < 2) return;
+
+        const parseRow = (text: string) => {
+          const result = []; let cur = ""; let inQuotes = false;
+          for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === "," && !inQuotes) { result.push(cur.trim()); cur = ""; }
+            else cur += char;
+          }
+          result.push(cur.trim()); return result;
+        };
+
+        const hRaw = parseRow(lines[0]);
+        const header = hRaw.map(h => h.trim().toLowerCase().replace(/[\s_-]/g, ""));
+        const records: any[] = [];
+
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(",").map(c => c.replace(/"/g, "").trim());
+          const cols = parseRow(lines[i]);
+          if (cols.length < 2) continue;
           const row: Record<string, string> = {};
           header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-          if (!row["Description"] && !row["itemDescription"]) continue;
-          const id = `DLP-${String(items.length + newItems.length + 1).padStart(3, "0")}`;
-          newItems.push({
-            id, itemDescription: row["Description"] || row["itemDescription"] || "",
-            partNumber: row["Part No"] || row["partNumber"] || "",
-            system: row["System"] || row["system"] || "",
-            subsystem: row["Subsystem"] || row["subsystem"] || "",
-            trainNo: row["Train"] || row["trainNo"] || "ALL",
-            qty: Number(row["Qty"] || row["qty"] || 0),
-            dlpExpiry: row["DLP Expiry"] || row["dlpExpiry"] || "",
-            vendor: row["Vendor"] || row["vendor"] || "",
-            ncrCount: Number(row["NCR Count"] || 0), status: "Active", replacementDue: "",
+
+          const find = (aliases: string[]) => {
+            for (const a of aliases) {
+              const norm = a.toLowerCase().replace(/[\s_-]/g, "");
+              if (row[norm]) return row[norm];
+            }
+            return "";
+          };
+
+          const pNo = find(["part_number", "partNumber", "Part No", "Part Number", "Material Number", "PartNo"]);
+          const desc = find(["item_description", "itemDescription", "Description", "Item Description", "Item Name", "Material Description"]);
+
+          if (!desc && !pNo) continue;
+
+          records.push({
+            id: find(["id", "DLP ID", "DLP No", "SL No", "Serial No"]),
+            itemDescription: desc || pNo,
+            partNumber: pNo,
+            system: find(["system", "System", "Asset Type", "Main System"]),
+            subsystem: find(["subsystem", "Subsystem", "Sub-System", "Sub System"]),
+            trainNo: find(["train_no", "trainNo", "Train", "Train No", "Vehicle No"]) || "ALL",
+            qty: Number((find(["qty", "Qty", "Quantity", "Count", "Total"]) || "0").replace(/[^\d]/g, "")),
+            dlpExpiry: find(["dlp_expiry", "dlpExpiry", "DLP Expiry", "Expiry Date", "Warranty End", "DLP Period"]),
+            vendor: find(["vendor", "Vendor", "Supplier", "OEM", "Manufacturer"]),
+            ncrCount: Number((find(["ncr_count", "ncrCount", "NCR Count", "Fault Count", "NCRs"]) || "0").replace(/[^\d]/g, "")),
+            status: find(["status", "Status", "Condition", "State"]) || "Active",
+            replacementDue: find(["replacement_due", "replacementDue", "Replacement Due", "Next Service", "Due Date"]),
           });
-          added++;
         }
-        setItems(prev => [...prev, ...newItems]);
-        toast({ title: `Imported ${added} DLP items`, description: "DLP items added from CSV." });
-      } catch {
+
+        const res = await fetch(`${BASE}/api/dlp/import`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ records })
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          toast({ title: "Import Successful", description: `Imported ${result.imported} DLP items.` });
+          fetchItems();
+        } else {
+          const err = await res.json();
+          toast({ title: "Import Failed", description: err.error || "Unknown error", variant: "destructive" });
+        }
+      } catch (err: any) {
         toast({ title: "Import Error", description: "Could not parse CSV file.", variant: "destructive" });
       }
     };
@@ -250,10 +293,10 @@ export default function DLPPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total DLP Items",   value: items.length, color: "text-foreground" },
-          { label: "Critical/Expired",  value: items.filter(i => ["critical","expired"].includes(getAlarmLevel(getDaysLeft(i.dlpExpiry), i.ncrCount))).length, color: "text-red-400" },
-          { label: "Warning",           value: items.filter(i => getAlarmLevel(getDaysLeft(i.dlpExpiry), i.ncrCount) === "warning").length, color: "text-yellow-400" },
-          { label: "Total NCRs",        value: items.reduce((s, i) => s + i.ncrCount, 0), color: "text-orange-400" },
+          { label: "Total DLP Items", value: items.length, color: "text-foreground" },
+          { label: "Critical/Expired", value: items.filter(i => ["critical", "expired"].includes(getAlarmLevel(getDaysLeft(i.dlpExpiry), i.ncrCount))).length, color: "text-red-400" },
+          { label: "Warning", value: items.filter(i => getAlarmLevel(getDaysLeft(i.dlpExpiry), i.ncrCount) === "warning").length, color: "text-yellow-400" },
+          { label: "Total NCRs", value: items.reduce((s, i) => s + i.ncrCount, 0), color: "text-orange-400" },
         ].map(s => (
           <Card key={s.label} className="bg-card border-border/50">
             <CardContent className="p-3">

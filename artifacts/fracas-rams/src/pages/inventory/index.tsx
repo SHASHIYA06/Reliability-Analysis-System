@@ -152,7 +152,6 @@ export default function InventoryPage() {
         const lines = content.split(/\r?\n/).filter(line => line.trim());
         if (lines.length < 2) return;
 
-        // Robust parsing
         const parseRow = (text: string) => {
           const result = []; let cur = ""; let inQuotes = false;
           for (let i = 0; i < text.length; i++) {
@@ -164,32 +163,42 @@ export default function InventoryPage() {
           result.push(cur.trim()); return result;
         };
 
-        const header = parseRow(lines[0]);
+        const hRaw = parseRow(lines[0]);
+        const header = hRaw.map(h => h.trim().toLowerCase().replace(/[\s_-]/g, ""));
         const records: any[] = [];
+
         for (let i = 1; i < lines.length; i++) {
           const cols = parseRow(lines[i]);
           if (cols.length < 2) continue;
           const row: Record<string, string> = {};
           header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
 
-          const pNo = row["part_no"] || row["partNo"] || row["Part No"] || "";
-          const desc = row["description"] || row["Description"] || "";
-          if (!pNo || !desc) continue;
+          const find = (aliases: string[]) => {
+            for (const a of aliases) {
+              const norm = a.toLowerCase().replace(/[\s_-]/g, "");
+              if (row[norm]) return row[norm];
+            }
+            return "";
+          };
+
+          const pNo = find(["part_no", "partNo", "Part No", "Part Number", "Item Code", "Material Code", "PartNo"]);
+          const desc = find(["description", "item_description", "Item Description", "Description", "Material Description", "Item Name", "Material Name"]);
+          if (!pNo && !desc) continue;
 
           records.push({
-            id: row["id"] || undefined,
-            partNo: pNo,
-            description: desc,
-            system: row["system"] || row["System"] || "",
-            category: row["category"] || row["Category"] || "Spare Part",
-            qty: Number((row["qty"] || row["Qty"] || "0").replace(/[^\d]/g, "")),
-            minQty: Number((row["min_qty"] || row["minQty"] || "1").replace(/[^\d]/g, "")),
-            unit: row["unit"] || row["Unit"] || "Nos",
-            location: row["location"] || row["Location"] || "",
-            vendor: row["vendor"] || row["Vendor"] || "",
-            unitCost: Number((row["unit_cost"] || row["unitCost"] || "0").replace(/[^\d.]/g, "")),
-            lastReceived: row["last_received"] || row["lastReceived"] || format(new Date(), "yyyy-MM-dd"),
-            condition: row["condition"] || row["Condition"] || "New",
+            id: find(["id", "SL No", "SLNo", "Serial No", "Record ID"]),
+            partNo: pNo || desc,
+            description: desc || pNo,
+            system: find(["system", "System", "Asset", "Main System", "System Name"]),
+            category: find(["category", "Category", "Type", "Component Type"]) || "Spare Part",
+            qty: Number((find(["qty", "Qty", "Quantity", "Stock", "Current Stock", "Balance"]) || "0").replace(/[^\d]/g, "")),
+            minQty: Number((find(["min_qty", "minQty", "Min Qty", "Buffer", "Safety Stock"]) || "1").replace(/[^\d]/g, "")),
+            unit: find(["unit", "Unit", "UOM", "Measure"]) || "Nos",
+            location: find(["location", "Location", "Bin", "Shelf", "Rack"]),
+            vendor: find(["vendor", "Vendor", "Supplier", "OEM", "Source"]),
+            unitCost: Number((find(["unit_cost", "unitCost", "Unit Cost", "Price", "Rate"]) || "0").replace(/[^\d.]/g, "")),
+            lastReceived: find(["last_received", "lastReceived", "Date", "Last Date", "Received Date"]),
+            condition: find(["condition", "Condition", "Status", "State"]) || "New",
           });
         }
 

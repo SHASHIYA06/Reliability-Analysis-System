@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, dlpTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -62,7 +62,23 @@ router.post("/dlp/import", async (req, res) => {
     const { records } = req.body as { records: any[] };
     if (!records?.length) { res.status(400).json({ error: "No records" }); return; }
     const toInsert = records.map((r, i) => ({ ...r, id: r.id || `DLP-IMP-${Date.now()}-${i}`, updatedAt: new Date() }));
-    await db.insert(dlpTable).values(toInsert).onConflictDoUpdate({ target: dlpTable.id, set: { updatedAt: new Date() } });
+    await db.insert(dlpTable).values(toInsert).onConflictDoUpdate({
+      target: dlpTable.id,
+      set: {
+        itemDescription: sql`EXCLUDED.item_description`,
+        partNumber: sql`EXCLUDED.part_number`,
+        system: sql`EXCLUDED.system`,
+        subsystem: sql`EXCLUDED.subsystem`,
+        trainNo: sql`EXCLUDED.train_no`,
+        qty: sql`EXCLUDED.qty`,
+        dlpExpiry: sql`EXCLUDED.dlp_expiry`,
+        vendor: sql`EXCLUDED.vendor`,
+        ncrCount: sql`EXCLUDED.ncr_count`,
+        status: sql`EXCLUDED.status`,
+        replacementDue: sql`EXCLUDED.replacement_due`,
+        updatedAt: new Date()
+      }
+    });
     res.json({ imported: toInsert.length });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, inventoryTable } from "@workspace/db";
-import { eq, desc, lt } from "drizzle-orm";
+import { eq, desc, lt, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -62,7 +62,24 @@ router.post("/inventory/import", async (req, res) => {
     const { records } = req.body as { records: any[] };
     if (!records?.length) { res.status(400).json({ error: "No records" }); return; }
     const toInsert = records.map((r, i) => ({ ...r, id: r.id || `INV-IMP-${Date.now()}-${i}`, updatedAt: new Date() }));
-    await db.insert(inventoryTable).values(toInsert).onConflictDoUpdate({ target: inventoryTable.id, set: { updatedAt: new Date() } });
+    await db.insert(inventoryTable).values(toInsert).onConflictDoUpdate({
+      target: inventoryTable.id,
+      set: {
+        partNo: sql`EXCLUDED.part_no`,
+        description: sql`EXCLUDED.description`,
+        system: sql`EXCLUDED.system`,
+        category: sql`EXCLUDED.category`,
+        qty: sql`EXCLUDED.qty`,
+        minQty: sql`EXCLUDED.min_qty`,
+        unit: sql`EXCLUDED.unit`,
+        location: sql`EXCLUDED.location`,
+        vendor: sql`EXCLUDED.vendor`,
+        unitCost: sql`EXCLUDED.unit_cost`,
+        lastReceived: sql`EXCLUDED.last_received`,
+        condition: sql`EXCLUDED.condition`,
+        updatedAt: new Date()
+      }
+    });
     res.json({ imported: toInsert.length });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

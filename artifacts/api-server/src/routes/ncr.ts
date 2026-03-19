@@ -203,7 +203,39 @@ router.post("/ncr/import", async (req, res) => {
           projectName: "KMRCL RS-3R",
         };
         await db.insert(ncrTable).values(record as any)
-          .onConflictDoUpdate({ target: ncrTable.ncrNumber, set: { status: record.status, updatedAt: new Date() } });
+          .onConflictDoUpdate({
+            target: ncrTable.ncrNumber,
+            set: {
+              sl: sql`EXCLUDED.sl`,
+              dateOfNcr: sql`EXCLUDED.date_of_ncr`,
+              dateOfDetection: sql`EXCLUDED.date_of_detection`,
+              itemDescription: sql`EXCLUDED.item_description`,
+              ncrDescription: sql`EXCLUDED.ncr_description`,
+              partNumber: sql`EXCLUDED.part_number`,
+              modifiedOrUnmodifiedFmi: sql`EXCLUDED.modified_or_unmodified_fmi`,
+              failureAfterFmi: sql`EXCLUDED.failure_after_fmi`,
+              faultySlNo: sql`EXCLUDED.faulty_sl_no`,
+              healthySlNo: sql`EXCLUDED.healthy_sl_no`,
+              issuedBy: sql`EXCLUDED.issued_by`,
+              qty: sql`EXCLUDED.qty`,
+              subSystem: sql`EXCLUDED.sub_system`,
+              trainNo: sql`EXCLUDED.train_no`,
+              car: sql`EXCLUDED.car`,
+              responsibility: sql`EXCLUDED.responsibility`,
+              status: sql`EXCLUDED.status`,
+              itemRepairedRecouped: sql`EXCLUDED.item_repaired_recouped`,
+              itemReplaced: sql`EXCLUDED.item_replaced`,
+              dateOfRepairedReplaced: sql`EXCLUDED.date_of_repaired_replaced`,
+              source: sql`EXCLUDED.source`,
+              investigationReportDate: sql`EXCLUDED.investigation_report_date`,
+              ncrClosedByDoc: sql`EXCLUDED.ncr_closed_by_doc`,
+              gatePassNo: sql`EXCLUDED.gate_pass_no`,
+              remarks: sql`EXCLUDED.remarks`,
+              irPrinted: sql`EXCLUDED.ir_printed`,
+              vehicleNo: sql`EXCLUDED.vehicle_no`,
+              updatedAt: new Date()
+            }
+          });
         imported++;
       } catch (e: any) {
         errors.push(`${row.ncrNumber || "row"}: ${e.message?.substring(0, 80)}`);

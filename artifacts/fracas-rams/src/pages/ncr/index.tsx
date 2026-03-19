@@ -74,7 +74,7 @@ function fmtDate(raw?: string | null) {
   try {
     const d = new Date(raw + "T00:00:00");
     if (isValid(d)) return format(d, "dd MMM yyyy");
-  } catch {}
+  } catch { }
   return raw;
 }
 
@@ -195,9 +195,9 @@ function printNcr870(ncr: Ncr): void {
     <div class="sec-body">
       <div style="margin-bottom:6px"><strong>Decision:</strong></div>
       <div class="decision-row">
-        ${["Claim","Holding","Use as is","Rework","Waiver","Scrap","Repair"].map(d =>
-          `<div class="chk-item"><div class="chk">&nbsp;</div> ${d}</div>`
-        ).join("")}
+        ${["Claim", "Holding", "Use as is", "Rework", "Waiver", "Scrap", "Repair"].map(d =>
+    `<div class="chk-item"><div class="chk">&nbsp;</div> ${d}</div>`
+  ).join("")}
       </div>
       <div class="grid2" style="margin-top:6px">
         <div class="fld"><label>Repair Procedure Required</label><div class="val">Yes / No</div></div>
@@ -299,27 +299,94 @@ export default function NCR() {
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    Papa.parse(file, {
-      header: true, skipEmptyLines: true,
-      complete: async (results) => {
-        try {
-          const records = results.data as any[];
-          const res = await fetch(`${BASE}/api/ncr/import`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ records }),
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      try {
+        const content = ev.target?.result as string;
+        const lines = content.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length < 2) return;
+
+        const parseRow = (text: string) => {
+          const result = []; let cur = ""; let inQuotes = false;
+          for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === "," && !inQuotes) { result.push(cur.trim()); cur = ""; }
+            else cur += char;
+          }
+          result.push(cur.trim()); return result;
+        };
+
+        const header = parseRow(lines[0]);
+        const records: any[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = parseRow(lines[i]);
+          if (cols.length < 2) continue;
+          const row: Record<string, string> = {};
+          header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+
+          const ncrNum = row["NCR REPORT NO."] || row["NCR REPORT NO"] || row["ncrNumber"] || row["NCR No"] || row["NCR NO."] || row["NCR #"] || "";
+          if (!ncrNum) continue;
+
+          const trainNo = row[" Train No"] || row["Train No"] || row["Train No."] || row["trainNo"] || row["Train"] || "";
+          const car = row["CAR"] || row["Car"] || row["car"] || "";
+          const rawStatus = (row["STATUS"] || row["status"] || row["Status"] || "OPEN").toUpperCase();
+          const status = rawStatus === "CLOSED" ? "CLOSED" : rawStatus === "CANCELED" || rawStatus === "CANCELLED" ? "CANCELED" : "OPEN";
+
+          records.push({
+            id: row["id"] || row["SL."] || row["SL"] || undefined,
+            sl: row["SL."] || row["SL"] || row["sl"] || null,
+            ncrNumber: ncrNum,
+            dateOfNcr: row["DATE OF NCR "] || row["DATE OF NCR"] || row["dateOfNcr"] || null,
+            dateOfDetection: row["DATE  OF DETECTION"] || row["DATE OF DETECTION"] || row["dateOfDetection"] || null,
+            itemDescription: row["ITEM DESCRIPTION"] || row["itemDescription"] || row["Description"] || null,
+            ncrDescription: row["NCR Description"] || row["ncrDescription"] || row["Description of NC"] || null,
+            partNumber: row["Part Number"] || row["partNumber"] || row["Part No"] || null,
+            modifiedOrUnmodifiedFmi: row["Modified or Unmodified\nFMI"] || row["modifiedOrUnmodifiedFmi"] || null,
+            failureAfterFmi: row["Failure After FMI"] || row["failureAfterFmi"] || null,
+            faultySlNo: row["Faulty Sl. No."] || row["faultySlNo"] || row["S/N Out"] || null,
+            healthySlNo: row["Healthy Sl. No."] || row["healthySlNo"] || row["S/N In"] || null,
+            issuedBy: row["ISSUED BY"] || row["issuedBy"] || null,
+            qty: row["Qty."] || row["qty"] || row["Quantity"] || null,
+            subSystem: row["SUB-SYSTEM"] || row["subSystem"] || row["System"] || null,
+            trainNo: trainNo,
+            car: car,
+            responsibility: row["RESPONSIBILITY (VENDOR/BEML)"] || row["responsibility"] || row["Responsibility"] || null,
+            status,
+            itemRepairedRecouped: row["ITEM REPAIRED/ RECOUPED"] || row["itemRepairedRecouped"] || null,
+            itemReplaced: row["ITEM REPLACED (IF ANY)"] || row["itemReplaced"] || null,
+            dateOfRepairedReplaced: row["DATE OF REPAIRED/REPLACED"] || row["dateOfRepairedReplaced"] || null,
+            source: row["SOURCE"] || row["source"] || null,
+            investigationReportDate: row["DATE OF INVESTIGATION REPORT RECEIVED"] || row["investigationReportDate"] || null,
+            ncrClosedByDoc: row["NCR CLOSED BY DOC.,"] || row["ncrClosedByDoc"] || null,
+            gatePassNo: row["GATE PASS           S/No"] || row["GATE PASS S/No"] || row["gatePassNo"] || null,
+            remarks: row["Remarks"] || row["remarks"] || null,
+            irPrinted: row["IR Printed"] || row["irPrinted"] || null,
+            vehicleNo: trainNo ? `TS#${String(trainNo).padStart(2, "0")} ${car || ""}`.trim() : null,
           });
-          const data = await res.json();
-          queryClient.invalidateQueries({ queryKey: ["ncr"] });
-          toast({ title: `${data.imported} NCRs imported${data.failed ? ` (${data.failed} errors)` : ""}` });
-        } catch (err: any) {
-          toast({ title: "Import failed", description: err?.message, variant: "destructive" });
         }
+
+        const res = await fetch(`${BASE}/api/ncr/import`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ records })
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          toast({ title: "Import Successful", description: `Imported ${result.imported} NCR records.` });
+          queryClient.invalidateQueries({ queryKey: ["ncr"] });
+        } else {
+          const err = await res.json();
+          toast({ title: "Import Failed", description: err.error || "Unknown error", variant: "destructive" });
+        }
+      } catch (err: any) {
+        toast({ title: "Import Error", description: "Could not parse CSV file.", variant: "destructive" });
       }
-    });
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // Summary counts
@@ -407,7 +474,7 @@ export default function NCR() {
                 <SelectTrigger className="bg-background text-xs h-9"><SelectValue placeholder="All Trains" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">All Trains</SelectItem>
-                  {trainNos.slice(0, 20).map(t => <SelectItem key={t} value={t}>TS#{String(t).padStart(2,"0")}</SelectItem>)}
+                  {trainNos.slice(0, 20).map(t => <SelectItem key={t} value={t}>TS#{String(t).padStart(2, "0")}</SelectItem>)}
                 </SelectContent>
               </Select>
               {hasFilters && (
@@ -464,7 +531,7 @@ export default function NCR() {
                       </td>
                       <td className="px-3 py-2.5 text-xs whitespace-nowrap">{ncr.subSystem || "—"}</td>
                       <td className="px-3 py-2.5 text-xs font-medium">
-                        {ncr.trainNo ? `TS#${String(ncr.trainNo).padStart(2,"0")}` : "—"}
+                        {ncr.trainNo ? `TS#${String(ncr.trainNo).padStart(2, "0")}` : "—"}
                       </td>
                       <td className="px-3 py-2.5 text-xs">{ncr.car || "—"}</td>
                       <td className="px-3 py-2.5 text-xs max-w-[120px]">

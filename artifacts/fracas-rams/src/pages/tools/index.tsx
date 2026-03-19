@@ -247,7 +247,9 @@ export default function ToolsPage() {
           return result;
         };
 
-        const header = parseRow(lines[0]);
+        const hRaw = parseRow(lines[0]);
+        // Normalize headers for easier matching (lowercase, no spaces/underscores)
+        const header = hRaw.map(h => h.trim().toLowerCase().replace(/[\s_-]/g, ""));
         const records: any[] = [];
 
         for (let i = 1; i < lines.length; i++) {
@@ -256,36 +258,45 @@ export default function ToolsPage() {
           const row: Record<string, string> = {};
           header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
 
-          const name = row["tool_name"] || row["toolName"] || row["Tool/Item Name"] || row["Name"] || row["Tool Name"] || "";
-          if (!name) continue;
+          // Helper for finding value with multiple header aliases (normalized)
+          const find = (aliases: string[]) => {
+            for (const a of aliases) {
+              const norm = a.toLowerCase().replace(/[\s_-]/g, "");
+              if (row[norm]) return row[norm];
+            }
+            return "";
+          };
 
-          const toolNo = row["tool_number"] || row["toolNumber"] || row["Item Code"] || row["Tool No."] || row["toolNo"] || "";
-          const toolId = row["tool_id"] || row["toolId"] || row["Inventory ID"] || row["inventory_id"] || row["InventoryId"] || "";
-          const qtyText = row["qty"] || row["Quantity"] || row["Qty"] || "1";
+          const name = find(["tool_name", "toolName", "Tool/Item Name", "Name", "Tool Name", "tool_description", "Description", "Item Name", "Material Description", "Material Name"]);
+          const toolNo = find(["tool_number", "toolNumber", "Item Code", "Tool No.", "Part No", "Part Number", "ItemCode", "Material Code"]);
+          const toolId = find(["tool_id", "toolId", "Inventory ID", "InventoryId", "Tool ID", "ToolID", "SL No", "Serial Number", "S.No", "S/No"]);
+          if (!name && !toolNo) continue;
+
+          const qtyText = find(["qty", "Quantity", "Qty", "Count", "Stock", "Current Stock"]) || "1";
           const qty = parseInt(qtyText.replace(/[^\d]/g, ""), 10);
-          const rawCons = row["consumable"] || row["Consumable"] || "";
-          const isCons = String(rawCons).toLowerCase() === "yes" || String(rawCons).toLowerCase() === "true" || rawCons === "1";
+          const rawCons = find(["consumable", "Consumable", "Is Consumable", "Spare", "Discardable"]);
+          const isCons = String(rawCons).toLowerCase() === "yes" || String(rawCons).toLowerCase() === "true" || rawCons === "1" || String(rawCons).toLowerCase() === "no"; // if "no", it's false, handled by string checks later
 
           records.push({
-            id: row["id"] || undefined,
+            // Omit 'id' to allow toolId-based UPSERT and prevent brittle sequential collisions
             toolId: toolId || toolNo || `T-${Date.now()}-${i}`,
-            toolName: name,
+            toolName: name || toolNo,
             itemCode: toolNo,
             inventoryId: toolId,
-            category: row["category"] || row["Category"] || "Other",
-            location: row["location"] || row["Location"] || "",
-            condition: row["condition"] || row["Condition"] || "Good",
+            category: find(["category", "Category", "System", "Main System", "Group"]) || "Other",
+            location: find(["location", "Location", "Place", "Store", "Lab", "Tool Room"]) || "",
+            condition: find(["condition", "Condition", "Status", "Health", "State"]) || "Good",
             qty: isNaN(qty) ? 1 : qty,
-            consumable: isCons,
-            calibrationDue: row["calibration_due"] || row["calibrationDue"] || row["Calibration Due"] || "",
-            remarks: row["remarks"] || row["Remarks"] || "",
-            issuedTo: row["issued_to"] || row["issuedTo"] || row["Assigned To"] || "",
-            referenceSpec: row["reference_spec"] || row["Reference Spec"] || "",
-            supplier: row["supplier"] || row["Supplier"] || "",
-            manufacturer: row["manufacturer"] || row["Manufacturer"] || "",
-            modelNumber: row["model_number"] || row["Model Number"] || "",
-            serialNumber: row["serial_number"] || row["Serial Number"] || "",
-            lastUpdated: row["last_updated"] || row["Last Updated"] || "",
+            consumable: String(rawCons).toLowerCase() === "yes" || String(rawCons).toLowerCase() === "true",
+            calibrationDue: find(["calibration_due", "Calibration Due", "Expiry Date", "Next Calibration", "Due Date"]),
+            remarks: find(["remarks", "Remarks", "Remark", "Notes", "Comment"]),
+            issuedTo: find(["issued_to", "Assigned To", "Issued To", "Name of Personnel", "User", "Issuer"]),
+            referenceSpec: find(["reference_spec", "Reference Spec", "Spec", "Standard", "Specification"]),
+            supplier: find(["supplier", "Supplier", "Vendor", "OEM", "Source"]),
+            manufacturer: find(["manufacturer", "Manufacturer", "Make", "Brand"]),
+            modelNumber: find(["model_number", "Model Number", "Model", "Model No"]),
+            serialNumber: find(["serial_number", "Serial Number", "S/No", "S.No", "Machine No"]),
+            lastUpdated: find(["last_updated", "Last Updated", "Date Updated", "Update Date", "Entry Date"]),
           });
         }
 
