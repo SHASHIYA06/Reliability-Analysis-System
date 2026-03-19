@@ -3,11 +3,52 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { API_BASE as BASE } from "@/lib/api-base";
 
 function dbToTool(r: any): Tool {
-  return { id: r.id, name: r.toolName || "", toolNo: r.toolNumber || r.toolId || "", category: r.category || "", location: r.location || "", condition: r.condition || "Good", calibrationDue: r.calibrationDue || "", assignedTo: r.issuedTo || "", qty: r.qty || 1, remarks: r.remarks || "", consumable: !!r.consumable };
+  return {
+    id: r.id,
+    name: r.toolName || "",
+    toolNo: r.toolNumber || r.toolId || "",
+    itemCode: r.itemCode || "",
+    inventoryId: r.inventoryId || "",
+    category: r.category || "",
+    location: r.location || "",
+    condition: r.condition || "Good",
+    calibrationDue: r.calibrationDue || "",
+    assignedTo: r.issuedTo || "",
+    qty: r.qty || 1,
+    remarks: r.remarks || "",
+    consumable: !!r.consumable,
+    referenceSpec: r.referenceSpec || "",
+    supplier: r.supplier || "",
+    manufacturer: r.manufacturer || "",
+    modelNumber: r.modelNumber || "",
+    serialNumber: r.serialNumber || "",
+    lastUpdated: r.lastUpdated || ""
+  };
 }
 
 function toolToDb(t: Tool): any {
-  return { id: t.id, toolId: t.toolNo, toolName: t.name, toolNumber: t.toolNo, category: t.category, location: t.location, condition: t.condition, calibrationDue: t.calibrationDue, issuedTo: t.assignedTo, qty: t.qty, remarks: t.remarks, consumable: t.consumable };
+  return {
+    id: t.id,
+    toolId: t.toolNo,
+    toolName: t.name,
+    toolNumber: t.toolNo,
+    itemCode: t.itemCode,
+    inventoryId: t.inventoryId,
+    category: t.category,
+    location: t.location,
+    condition: t.condition,
+    calibrationDue: t.calibrationDue,
+    issuedTo: t.assignedTo,
+    qty: t.qty,
+    remarks: t.remarks,
+    consumable: t.consumable,
+    referenceSpec: t.referenceSpec,
+    supplier: t.supplier,
+    manufacturer: t.manufacturer,
+    modelNumber: t.modelNumber,
+    serialNumber: t.serialNumber,
+    lastUpdated: t.lastUpdated
+  };
 }
 import { format } from "date-fns";
 import { Wrench, Plus, Search, Download, AlertCircle, Upload, Edit2, Trash2, ArrowRightLeft, MoreVertical, CheckCircle } from "lucide-react";
@@ -23,9 +64,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type Tool = {
-  id: string; name: string; toolNo: string; category: string; location: string;
-  condition: string; calibrationDue: string; assignedTo: string; qty: number; remarks: string;
+  id: string;
+  name: string;
+  toolNo: string;
+  itemCode?: string;
+  inventoryId?: string;
+  category: string;
+  location: string;
+  condition: string;
+  calibrationDue: string;
+  assignedTo: string;
+  qty: number;
+  remarks: string;
   consumable?: boolean;
+  referenceSpec?: string;
+  supplier?: string;
+  manufacturer?: string;
+  modelNumber?: string;
+  serialNumber?: string;
+  lastUpdated?: string;
 };
 
 const INITIAL_TOOLS: Tool[] = [
@@ -167,36 +224,36 @@ export default function ToolsPage() {
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
       try {
-        const lines = (ev.target?.result as string).split("\n").filter(Boolean);
+        const content = ev.target?.result as string;
+        const lines = content.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length < 2) return;
+
         const header = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
-        let added = 0;
-        const newTools: Tool[] = [];
+        const records: any[] = [];
+
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(",").map(c => c.replace(/"/g, "").trim());
           const row: Record<string, string> = {};
-          header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-          if (!row["Name"] && !row["name"]) continue;
-          const id = `TOOL-${String(tools.length + newTools.length + 1).padStart(3, "0")}`;
-          const rawCons = row["Consumable"] || row["consumable"] || "";
-          const isCons = String(rawCons).toLowerCase() === "yes" || String(rawCons).toLowerCase() === "true" || rawCons === "1";
 
-          newTools.push({
-            id, name: row["Name"] || row["name"] || "", toolNo: row["Tool No"] || row["toolNo"] || "",
-            category: row["Category"] || row["category"] || "Other",
-            location: row["Location"] || row["location"] || "",
-            condition: row["Condition"] || row["condition"] || "Good",
-            calibrationDue: row["Calibration Due"] || row["calibrationDue"] || "",
-            qty: Number(row["Qty"] || row["qty"] || 1), assignedTo: "",
-            remarks: row["Remarks"] || row["remarks"] || "",
-            consumable: isCons
-          });
-          added++;
         }
-        setTools(prev => [...prev, ...newTools]);
-        toast({ title: `Imported ${added} tools`, description: "Tools added to register from CSV." });
-      } catch {
+
+        const res = await fetch(`${BASE}/api/tools/import`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ records })
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          toast({ title: "Import Successful", description: `Imported ${result.imported} tools.` });
+          fetchTools();
+        } else {
+          const err = await res.json();
+          toast({ title: "Import Failed", description: err.error || "Unknown error", variant: "destructive" });
+        }
+      } catch (err: any) {
         toast({ title: "Import Error", description: "Could not parse CSV file.", variant: "destructive" });
       }
     };
