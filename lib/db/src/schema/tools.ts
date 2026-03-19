@@ -6,7 +6,7 @@ export const toolsTable = pgTable("tools", {
   id: text("id").primaryKey(),
   toolId: text("tool_id").notNull().unique(), // Maps to Inventory ID or similar
   toolName: text("tool_name").notNull(),
-  itemCode: text("item_code"),
+  toolNumber: text("tool_number"), // Renamed/Added to match snippet
   inventoryId: text("inventory_id"),
   category: text("category"),
   location: text("location"),
@@ -15,6 +15,7 @@ export const toolsTable = pgTable("tools", {
   consumable: boolean("consumable").default(false),
   remarks: text("remarks"),
   referenceSpec: text("reference_spec"),
+  calibrationDue: text("calibration_due"), // Added to match snippet
   supplier: text("supplier"),
   manufacturer: text("manufacturer"),
   modelNumber: text("model_number"),
