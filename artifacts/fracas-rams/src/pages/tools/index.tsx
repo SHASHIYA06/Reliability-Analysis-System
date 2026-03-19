@@ -326,21 +326,29 @@ export default function ToolsPage() {
     <div className="space-y-6">
       <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Wrench className="w-6 h-6 text-primary" /> Tools Management
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Track maintenance tools, calibration schedules, and tool issue register.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-2">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.15)] ring-1 ring-white/5 group">
+            <Wrench className="w-8 h-8 text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.5)] group-hover:rotate-12 transition-transform duration-300" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/60">
+              Master Tool List
+            </h1>
+            <p className="text-sm text-muted-foreground font-medium flex items-center gap-2 mt-0.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+              Comprehensive asset tracking & maintenance dashboard
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => importRef.current?.click()}>
-            <Upload className="w-4 h-4 mr-1.5" /> Import CSV
+        <div className="flex gap-2.5 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => importRef.current?.click()} className="bg-card hover:bg-muted font-semibold border-border">
+            <Upload className="w-4 h-4 mr-2 text-indigo-400" /> Import CSV
           </Button>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="w-4 h-4 mr-1.5" /> Export
+          <Button variant="outline" size="sm" onClick={exportCSV} className="bg-card hover:bg-muted font-semibold border-border">
+            <Download className="w-4 h-4 mr-2" /> Export
           </Button>
-          <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={openAdd}>
+          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-600/20" onClick={openAdd}>
             <Plus className="w-4 h-4 mr-1.5" /> Add Tool
           </Button>
         </div>
@@ -401,18 +409,17 @@ export default function ToolsPage() {
       <Card className="bg-card border-border/50 shadow-lg">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
+            <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border font-bold">
               <tr>
-                <th className="px-4 py-3 text-left">Tool ID</th>
-                <th className="px-4 py-3 text-left">Name</th>
-                <th className="px-4 py-3 text-left">Tool No.</th>
-                <th className="px-4 py-3 text-left">Category</th>
+                <th className="px-4 py-3 text-left">S/No (Tool ID)</th>
+                <th className="px-4 py-3 text-left">Tools Name</th>
+                <th className="px-4 py-3 text-left">Asset Type</th>
                 <th className="px-4 py-3 text-center">Qty</th>
-                <th className="px-4 py-3 text-center">Consumable</th>
-                <th className="px-4 py-3 text-left">Location</th>
+                <th className="px-4 py-3 text-left">Place</th>
                 <th className="px-4 py-3 text-left">Condition</th>
+                <th className="px-4 py-3 text-left">Make / Reference</th>
                 <th className="px-4 py-3 text-left">Calibration Due</th>
-                <th className="px-4 py-3 text-left">Assigned To</th>
+                <th className="px-4 py-3 text-left">Remarks</th>
                 <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
@@ -422,30 +429,34 @@ export default function ToolsPage() {
               ) : filtered.map(t => {
                 const daysLeft = getDaysLeft(t.calibrationDue);
                 return (
-                  <tr key={t.id} className="border-b border-border/40 hover:bg-muted/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">{t.id}</td>
-                    <td className="px-4 py-2.5 font-medium text-sm">{t.name}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{t.toolNo}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{t.category}</td>
-                    <td className="px-4 py-2.5 text-center">{t.qty}</td>
-                    <td className="px-4 py-2.5 text-center">
-                      {t.consumable ? <Badge className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px]">Yes</Badge> : <span className="text-xs text-muted-foreground">No</span>}
+                  <tr key={t.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">{t.toolId || t.id}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="font-medium text-sm">{t.toolName || t.name}</div>
+                      {t.itemCode && <div className="text-[10px] text-muted-foreground font-mono">{t.itemCode}</div>}
                     </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{t.category}</td>
+                    <td className="px-4 py-2.5 text-center font-bold">{t.qty}</td>
                     <td className="px-4 py-2.5 text-xs">{t.location}</td>
                     <td className="px-4 py-2.5">
                       <Badge variant="outline" className={`text-[10px] ${CONDITION_COLORS[t.condition] || ""}`}>{t.condition}</Badge>
                     </td>
-                    <td className="px-4 py-2.5 text-xs">
-                      {t.calibrationDue ? (
-                        <span className={daysLeft < 0 ? "text-red-400 font-bold" : daysLeft <= 30 ? "text-yellow-400" : "text-muted-foreground"}>
-                          {t.calibrationDue}{daysLeft < 0 ? ` (${Math.abs(daysLeft)}d OD)` : daysLeft <= 30 ? ` (${daysLeft}d)` : ""}
-                        </span>
-                      ) : <span className="text-muted-foreground">N/A</span>}
+                    <td className="px-4 py-2.5 text-xs italic text-muted-foreground">
+                      {t.referenceSpec || t.modelNumber || t.manufacturer || "---"}
                     </td>
-                    <td className="px-4 py-2.5 text-xs">
-                      {t.assignedTo
-                        ? <span className="text-yellow-400 font-medium">{t.assignedTo}</span>
-                        : <span className="text-green-400 flex items-center gap-1"><CheckCircle className="w-3 h-3" />Available</span>}
+                    <td className="px-4 py-2.5 text-xs whitespace-nowrap">
+                      {t.calibrationDue ? (
+                        <div className="flex flex-col">
+                          <span className={daysLeft < 0 ? "text-red-400 font-bold" : daysLeft <= 30 ? "text-yellow-400 font-medium" : "text-muted-foreground"}>
+                            {t.calibrationDue}
+                          </span>
+                          {daysLeft < 0 && <span className="text-[9px] text-red-500 font-bold uppercase tracking-tighter">{Math.abs(daysLeft)}d Overdue</span>}
+                          {daysLeft >= 0 && daysLeft <= 30 && <span className="text-[9px] text-yellow-500 font-medium tracking-tighter">Due in {daysLeft}d</span>}
+                        </div>
+                      ) : <span className="text-muted-foreground">---</span>}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground line-clamp-1 max-w-[150px]">
+                      {t.remarks || "---"}
                     </td>
                     <td className="px-4 py-2.5 text-center">
                       <DropdownMenu>
