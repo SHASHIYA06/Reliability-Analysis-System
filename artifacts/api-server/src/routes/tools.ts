@@ -163,11 +163,11 @@ router.post("/tools/import", async (req, res) => {
         target: toolsTable.toolId,
         set: {
           toolName: sql`EXCLUDED.tool_name`,
-          toolNumber: sql`EXCLUDED.tool_number`,
+          toolNumber: sql`EXCLUDED.item_code`,
           category: sql`EXCLUDED.category`,
           location: sql`EXCLUDED.location`,
           condition: sql`EXCLUDED.condition`,
-          calibrationDue: sql`EXCLUDED.calibration_due`,
+          calibrationDue: sql`EXCLUDED.last_updated`,
           issuedTo: sql`EXCLUDED.issued_to`,
           issuedDate: sql`EXCLUDED.issued_date`,
           remarks: sql`EXCLUDED.remarks`,
