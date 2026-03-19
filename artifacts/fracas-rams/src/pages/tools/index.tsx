@@ -235,8 +235,37 @@ export default function ToolsPage() {
 
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(",").map(c => c.replace(/"/g, "").trim());
+          if (cols.length < 2) continue;
           const row: Record<string, string> = {};
+          header.forEach((h, idx) => { row[h] = cols[idx] || ""; });
 
+          const name = row["Tool/Item Name"] || row["Name"] || row["tool_name"] || row["Tool Name"] || "";
+          if (!name) continue;
+
+          const toolNo = row["Item Code"] || row["Tool No."] || row["tool_number"] || row["toolNo"] || "";
+          const invId = row["Inventory ID"] || row["inventory_id"] || row["InventoryId"] || "";
+          const qty = parseInt(row["Quantity"] || row["Qty"] || row["qty"] || "1", 10);
+          const rawCons = row["Consumable"] || row["consumable"] || "";
+          const isCons = String(rawCons).toLowerCase() === "yes" || String(rawCons).toLowerCase() === "true" || rawCons === "1";
+
+          records.push({
+            toolId: invId || toolNo || `T-${Date.now()}-${i}`,
+            toolName: name,
+            itemCode: toolNo,
+            inventoryId: invId,
+            category: row["Category"] || row["category"] || "Other",
+            location: row["Location"] || row["location"] || "",
+            condition: row["Condition"] || row["condition"] || "Good",
+            qty: isNaN(qty) ? 1 : qty,
+            consumable: isCons,
+            remarks: row["Remarks"] || row["remarks"] || "",
+            referenceSpec: row["Reference Spec"] || row["reference_spec"] || "",
+            supplier: row["Supplier"] || row["supplier"] || "",
+            manufacturer: row["Manufacturer"] || row["manufacturer"] || "",
+            modelNumber: row["Model Number"] || row["model_number"] || "",
+            serialNumber: row["Serial Number"] || row["serial_number"] || "",
+            lastUpdated: row["Last Updated"] || row["last_updated"] || "",
+          });
         }
 
         const res = await fetch(`${BASE}/api/tools/import`, {

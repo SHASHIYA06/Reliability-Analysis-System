@@ -375,7 +375,6 @@ router.get("/reports/availability", async (req, res) => {
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
     const allTrains = await db.select().from(trainsTable);
-
     const now = new Date();
     const start = startDate
       ? new Date(startDate)

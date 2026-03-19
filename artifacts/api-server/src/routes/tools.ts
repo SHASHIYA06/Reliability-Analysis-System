@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, toolsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -74,7 +74,26 @@ router.post("/tools/import", async (req, res) => {
       }
       return { ...r, consumable: cons, id: r.id || `TOOL-IMP-${Date.now()}-${i}`, updatedAt: new Date() };
     });
-    await db.insert(toolsTable).values(toInsert).onConflictDoUpdate({ target: toolsTable.id, set: { updatedAt: new Date() } });
+    await db.insert(toolsTable).values(toInsert).onConflictDoUpdate({
+      target: toolsTable.toolId,
+      set: {
+        toolName: sql`EXCLUDED.tool_name`,
+        itemCode: sql`EXCLUDED.item_code`,
+        inventoryId: sql`EXCLUDED.inventory_id`,
+        category: sql`EXCLUDED.category`,
+        location: sql`EXCLUDED.location`,
+        condition: sql`EXCLUDED.condition`,
+        qty: sql`EXCLUDED.qty`,
+        remarks: sql`EXCLUDED.remarks`,
+        referenceSpec: sql`EXCLUDED.reference_spec`,
+        supplier: sql`EXCLUDED.supplier`,
+        manufacturer: sql`EXCLUDED.manufacturer`,
+        modelNumber: sql`EXCLUDED.model_number`,
+        serialNumber: sql`EXCLUDED.serial_number`,
+        lastUpdated: sql`EXCLUDED.last_updated`,
+        updatedAt: new Date()
+      }
+    });
     res.json({ imported: toInsert.length });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
