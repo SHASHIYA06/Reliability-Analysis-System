@@ -87,8 +87,8 @@ function buildFilters(params: {
   return conditions;
 }
 
-async function getFleetDistance(): Promise<number> {
-  const result = await db.execute(sql`
+async function getFleetDistance(trainSet?: string): Promise<number> {
+  let query = sql`
     SELECT COALESCE(SUM(max_km), 0)::float as total
     FROM (
       SELECT train_set, MAX(train_distance_at_failure) as max_km
@@ -96,10 +96,12 @@ async function getFleetDistance(): Promise<number> {
       WHERE train_set IS NOT NULL
         AND train_set ~ '^TS'
         AND train_distance_at_failure > 0
+        ${trainSet ? sql`AND train_set = ${trainSet}` : sql``}
       GROUP BY train_set
     ) t
-  `);
-  return parseFloat(String((result.rows[0] as any)?.total || 0));
+  `;
+  const result = await db.execute(query);
+  return Number((result.rows[0] as any)?.total || 0);
 }
 
 /**
@@ -116,12 +118,12 @@ function isServiceFailure(f: any): boolean {
 // ─── MDBF ────────────────────────────────────────────────────────────────────
 router.get("/reports/mdbf", async (req, res) => {
   try {
-    const { startDate, endDate } = req.query as Record<string, string>;
-    const conditions = buildDateFilter(startDate, endDate);
+    const { startDate, endDate, system, trainSet } = req.query as Record<string, string>;
+    const conditions = buildFilters({ startDate, endDate, system, trainSet });
     const allJobCards = await db.select().from(failuresTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-    const totalFleetDistance = await getFleetDistance();
+    const totalFleetDistance = await getFleetDistance(trainSet);
     const serviceFailures = allJobCards.filter(isServiceFailure);
     const mdbf = serviceFailures.length > 0 ? totalFleetDistance / serviceFailures.length : totalFleetDistance;
 
@@ -186,12 +188,12 @@ router.get("/reports/mdbf", async (req, res) => {
 // Grouped by system (component level = subsystem_name)
 router.get("/reports/mdbcf", async (req, res) => {
   try {
-    const { startDate, endDate } = req.query as Record<string, string>;
-    const conditions = buildDateFilter(startDate, endDate);
+    const { startDate, endDate, system, trainSet } = req.query as Record<string, string>;
+    const conditions = buildFilters({ startDate, endDate, system, trainSet });
     const allJobCards = await db.select().from(failuresTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-    const totalFleetDistance = await getFleetDistance();
+    const totalFleetDistance = await getFleetDistance(trainSet);
     const serviceFailures = allJobCards.filter(isServiceFailure);
 
     // Group service failures by systemName
@@ -293,8 +295,8 @@ router.get("/reports/mdbcf", async (req, res) => {
 // ─── MTTR ────────────────────────────────────────────────────────────────────
 router.get("/reports/mttr", async (req, res) => {
   try {
-    const { startDate, endDate } = req.query as Record<string, string>;
-    const conditions = buildDateFilter(startDate, endDate);
+    const { startDate, endDate, system, trainSet } = req.query as Record<string, string>;
+    const conditions = buildFilters({ startDate, endDate, system, trainSet });
     const allJobCards = await db.select().from(failuresTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
@@ -366,8 +368,8 @@ router.get("/reports/mttr", async (req, res) => {
 // Per RAMS Plan Section 19.4.1
 router.get("/reports/availability", async (req, res) => {
   try {
-    const { startDate, endDate } = req.query as Record<string, string>;
-    const conditions = buildDateFilter(startDate, endDate);
+    const { startDate, endDate, system, trainSet } = req.query as Record<string, string>;
+    const conditions = buildFilters({ startDate, endDate, system, trainSet });
     const allJobCards = await db.select().from(failuresTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
@@ -588,7 +590,7 @@ router.get("/reports/summary", async (_req, res) => {
         GROUP BY train_set
       ) t
     `);
-    let totalFleetDistance = parseFloat(String((kmResult.rows[0] as any)?.total || 0));
+    let totalFleetDistance = Number((kmResult.rows[0] as any)?.total || 0);
     if (totalFleetDistance === 0 && distances.length > 0) {
       const dm: Record<string, number> = {};
       for (const d of distances) {
@@ -679,6 +681,22 @@ router.get("/reports/summary", async (_req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to generate summary report" });
+  }
+});
+
+// New endpoint for dashboard filtering UI
+router.get("/reports/filters", async (_req, res) => {
+  try {
+    const rawSystems = await db.execute(sql`SELECT DISTINCT system_name FROM failures WHERE system_name IS NOT NULL ORDER BY system_name ASC`);
+    const rawTrainSets = await db.execute(sql`SELECT DISTINCT train_set FROM failures WHERE train_set IS NOT NULL ORDER BY train_set ASC`);
+
+    res.json({
+      systems: rawSystems.rows.map((r: any) => r.system_name),
+      trainSets: rawTrainSets.rows.map((r: any) => r.train_set),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch filter options" });
   }
 });
 

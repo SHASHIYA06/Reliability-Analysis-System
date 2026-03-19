@@ -241,6 +241,14 @@ paths:
           name: endDate
           schema:
             type: string
+        - in: query
+          name: system
+          schema:
+            type: string
+        - in: query
+          name: trainSet
+          schema:
+            type: string
       responses:
         "200":
           description: MDBF report
@@ -261,6 +269,14 @@ paths:
             type: string
         - in: query
           name: endDate
+          schema:
+            type: string
+        - in: query
+          name: system
+          schema:
+            type: string
+        - in: query
+          name: trainSet
           schema:
             type: string
       responses:
@@ -285,6 +301,14 @@ paths:
           name: endDate
           schema:
             type: string
+        - in: query
+          name: system
+          schema:
+            type: string
+        - in: query
+          name: trainSet
+          schema:
+            type: string
       responses:
         "200":
           description: MTTR report
@@ -305,6 +329,14 @@ paths:
             type: string
         - in: query
           name: endDate
+          schema:
+            type: string
+        - in: query
+          name: system
+          schema:
+            type: string
+        - in: query
+          name: trainSet
           schema:
             type: string
       responses:
@@ -345,6 +377,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SummaryReport"
+
+  /reports/filters:
+    get:
+      operationId: getReportsFilters
+      tags: [reports]
+      summary: Get available systems and train sets for report filtering
+      responses:
+        "200":
+          description: Filter options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  systems:
+                    type: array
+                    items:
+                      type: string
+                  trainSets:
+                    type: array
+                    items:
+                      type: string
+                required: [systems, trainSets]
 
   /fleet-distances:
     get:

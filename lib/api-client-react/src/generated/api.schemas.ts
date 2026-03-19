@@ -374,23 +374,36 @@ export type ExportFailures200 = {
 export type GetMDBFReportParams = {
   startDate?: string;
   endDate?: string;
+  system?: string;
+  trainSet?: string;
 };
 
 export type GetMDBCFReportParams = {
   startDate?: string;
   endDate?: string;
+  system?: string;
+  trainSet?: string;
 };
 
 export type GetMTTRReportParams = {
   startDate?: string;
   endDate?: string;
+  system?: string;
+  trainSet?: string;
 };
 
 export type GetAvailabilityReportParams = {
   startDate?: string;
   endDate?: string;
+  system?: string;
+  trainSet?: string;
 };
 
 export type GetPatternFailuresParams = {
   windowMonths?: number;
+};
+
+export type GetReportsFilters200 = {
+  systems: string[];
+  trainSets: string[];
 };

@@ -30,6 +30,7 @@ import type {
   GetMDBFReportParams,
   GetMTTRReportParams,
   GetPatternFailuresParams,
+  GetReportsFilters200,
   HealthStatus,
   ImportFailuresBody,
   ImportResult,
@@ -1227,7 +1228,7 @@ export const getGetAvailabilityReportQueryOptions = <
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getAvailabilityReport>>
   > = ({ signal }) =>
-    getAvailabilityReport(params, { signal, ...requestOptions });
+      getAvailabilityReport(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getAvailabilityReport>>,
@@ -1435,6 +1436,80 @@ export function useGetSummaryReport<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetSummaryReportQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get available systems and train sets for report filtering
+ */
+export const getGetReportsFiltersUrl = () => {
+  return `/api/reports/filters`;
+};
+
+export const getReportsFilters = async (
+  options?: RequestInit,
+): Promise<GetReportsFilters200> => {
+  return customFetch<GetReportsFilters200>(getGetReportsFiltersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportsFiltersQueryKey = () => {
+  return [`/api/reports/filters`] as const;
+};
+
+export const getGetReportsFiltersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReportsFilters>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getReportsFilters>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReportsFiltersQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportsFilters>>> =
+    ({ signal }) => getReportsFilters({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReportsFilters>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReportsFiltersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReportsFilters>>
+>;
+export type GetReportsFiltersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get available systems and train sets for report filtering
+ */
+
+export function useGetReportsFilters<
+  TData = Awaited<ReturnType<typeof getReportsFilters>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getReportsFilters>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReportsFiltersQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

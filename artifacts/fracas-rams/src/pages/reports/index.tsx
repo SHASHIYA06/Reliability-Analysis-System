@@ -1,10 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   useGetMDBFReport, useGetMTTRReport,
   useGetAvailabilityReport, useGetMDBCFReport, useGetPatternFailures,
+  useGetReportsFilters
 } from "@workspace/api-client-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { GetMDBFReportParams } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,15 +25,22 @@ const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
 const fmt = (n: number) => n.toLocaleString("en-IN");
 const ComplianceBadge = ({ ok }: { ok: boolean }) =>
   ok
-    ? <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Compliant</Badge>
-    : <Badge variant="destructive">Non-Compliant</Badge>;
+    ? <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+      <CheckCircle2 className="w-3 h-3 mr-1" /> Compliant
+    </Badge>
+    : <Badge variant="destructive" className="bg-rose-500/10 text-rose-500 border-rose-500/20">
+      <AlertTriangle className="w-3 h-3 mr-1" /> Non-Compliant
+    </Badge>;
 
 const StatCard = ({
-  label, value, unit, sub, compliance,
-}: { label: string; value: string; unit?: string; sub?: string; compliance?: boolean }) => (
-  <Card className="bg-card border-border shadow-lg">
+  label, value, unit, sub, compliance, onClick
+}: { label: string; value: string; unit?: string; sub?: string; compliance?: boolean; onClick?: () => void }) => (
+  <Card className={`bg-card border-border shadow-lg ${onClick ? "cursor-pointer hover:border-primary/50 transition-colors" : ""}`} onClick={onClick}>
     <CardContent className="pt-5 pb-4">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+      <div className="flex justify-between items-start">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+        {onClick && <InfoBlockIcon className="w-3.5 h-3.5 text-muted-foreground/50" />}
+      </div>
       <p className="text-3xl font-bold font-mono mt-1 text-foreground">
         {value}
         {unit && <span className="text-base font-sans font-normal text-muted-foreground ml-1">{unit}</span>}
@@ -44,6 +53,10 @@ const StatCard = ({
       )}
     </CardContent>
   </Card>
+);
+
+const InfoBlockIcon = (props: any) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
 );
 
 const InfoBlock = ({ label, value, mono = false }: { label: string; value: string | number; mono?: boolean }) => (
@@ -193,11 +206,10 @@ function AIInsightsTab() {
                   <Sparkles className="w-3.5 h-3.5 text-primary" />
                 </div>
               )}
-              <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                m.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-br-none"
-                  : "bg-muted/50 border border-border/50 rounded-bl-none"
-              }`}>
+              <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${m.role === "user"
+                ? "bg-primary text-primary-foreground rounded-br-none"
+                : "bg-muted/50 border border-border/50 rounded-bl-none"
+                }`}>
                 {m.text}
               </div>
             </div>
@@ -239,11 +251,44 @@ function AIInsightsTab() {
 
 /* ─── Main Component ────────────────────────────────────────────────────────── */
 export default function Reports() {
-  const { data: mdbf } = useGetMDBFReport() as { data: any };
-  const { data: mttr } = useGetMTTRReport() as { data: any };
-  const { data: avail } = useGetAvailabilityReport() as { data: any };
-  const { data: mdbcf } = useGetMDBCFReport() as { data: any };
-  const { data: patterns } = useGetPatternFailures({ windowMonths: 18 }) as { data: any };
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [selectedSystem, setSelectedSystem] = useState("all");
+  const [selectedTrainSet, setSelectedTrainSet] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [showLogic, setShowLogic] = useState<string | null>(null);
+
+  const { data: filterOptions = { systems: [], trainSets: [] } } = useGetReportsFilters();
+
+  const handleMonthChange = (m: string) => {
+    setSelectedMonth(m);
+    if (m) {
+      const [year, month] = m.split("-");
+      const start = `${year}-${month.padStart(2, "0")}-01`;
+      const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+      const end = `${year}-${month.padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      setStartDate(start);
+      setEndDate(end);
+    } else {
+      setStartDate("");
+      setEndDate("");
+    }
+  };
+
+  const params: GetMDBFReportParams = {
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    system: selectedSystem === "all" ? undefined : selectedSystem,
+    trainSet: selectedTrainSet === "all" ? undefined : selectedTrainSet,
+  };
+
+  const { data: mdbf, isLoading: mdbfLoading } = useGetMDBFReport(params) as { data: any, isLoading: boolean };
+  const { data: mttr, isLoading: mttrLoading } = useGetMTTRReport(params) as { data: any, isLoading: boolean };
+  const { data: avail, isLoading: availLoading } = useGetAvailabilityReport(params) as { data: any, isLoading: boolean };
+  const { data: mdbcf, isLoading: mdbcfLoading } = useGetMDBCFReport(params) as { data: any, isLoading: boolean };
+  const { data: patterns, isLoading: patternsLoading } = useGetPatternFailures({ windowMonths: 18 }) as { data: any, isLoading: boolean };
+
+  const isAnyLoading = mdbfLoading || mttrLoading || availLoading || mdbcfLoading || patternsLoading;
 
   return (
     <div className="space-y-6">
@@ -254,10 +299,95 @@ export default function Reports() {
             Reliability, Availability, Maintainability & Safety · EN 50126:1999 / KMRC RS(3R)
           </p>
         </div>
-        <Button variant="outline" className="border-border shrink-0">
-          <Download className="w-4 h-4 mr-2" /> Export PDF Report
-        </Button>
+        <div className="flex gap-2">
+          {isAnyLoading && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+          <Button variant="outline" className="border-border shrink-0">
+            <Download className="w-4 h-4 mr-2" /> Export PDF Report
+          </Button>
+        </div>
       </div>
+
+      {/* ── Filters Panel ────────────────────────────────────────────────── */}
+      <Card className="bg-card/50 border-border/60 shadow-md backdrop-blur-sm">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Month Period</label>
+              <Input
+                type="month"
+                value={selectedMonth}
+                onChange={e => handleMonthChange(e.target.value)}
+                className="bg-background border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Start Date</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={e => { setStartDate(e.target.value); setSelectedMonth(""); }}
+                className="bg-background border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">End Date</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={e => { setEndDate(e.target.value); setSelectedMonth(""); }}
+                className="bg-background border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">System Filter</label>
+              <select
+                value={selectedSystem}
+                onChange={e => setSelectedSystem(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="all">All Systems</option>
+                {filterOptions.systems.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Train Set</label>
+              <select
+                value={selectedTrainSet}
+                onChange={e => setSelectedTrainSet(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="all">All TrainSets</option>
+                {filterOptions.trainSets.map(ts => (
+                  <option key={ts} value={ts}>{ts}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-between items-center">
+            <p className="text-[10px] text-muted-foreground italic">
+              Filtered by: {selectedMonth ? `Month ${selectedMonth}` : (startDate && endDate ? `${startDate} to ${endDate}` : 'Overall Fleet Data')}
+              {selectedSystem !== "all" && ` · System: ${selectedSystem}`}
+              {selectedTrainSet !== "all" && ` · TrainSet: ${selectedTrainSet}`}
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[10px] h-6 px-2 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+                setSelectedSystem("all");
+                setSelectedTrainSet("all");
+                setSelectedMonth("");
+              }}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="mdbf" className="w-full">
         <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-muted/50 border border-border rounded-xl">
@@ -281,7 +411,7 @@ export default function Reports() {
 
         {/* ── MDBF ─────────────────────────────────────────────────────────── */}
         <TabsContent value="mdbf" className="mt-6 space-y-6">
-          {!mdbf ? <EmptyTab label="MDBF" /> : (
+          {!mdbf && mdbfLoading ? <EmptyTab label="MDBF" /> : !mdbf ? <div className="text-center py-20 text-muted-foreground">No MDBF data found for selected filters.</div> : (
             <>
               <div className="bg-muted/30 border border-border/50 rounded-xl px-5 py-3 text-xs text-muted-foreground">
                 <strong>Formula:</strong> MDBF = Total Fleet Distance ÷ Total Service Failures &nbsp;|&nbsp;
@@ -296,11 +426,32 @@ export default function Reports() {
                   unit="km"
                   sub={`Target (6 mo): ${fmt(mdbf.target6mo || 60000)} km`}
                   compliance={mdbf.compliance}
+                  onClick={() => setShowLogic("mdbf")}
                 />
-                <StatCard label="Total Fleet Distance" value={fmt(mdbf.totalFleetDistance)} unit="km" />
+                <StatCard label="Total Fleet Distance" value={fmt(mdbf.totalFleetDistance)} unit="km" onClick={() => setShowLogic("distance")} />
                 <StatCard label="Service Failures" value={String(mdbf.totalServiceFailures)}
-                  sub={`Withdrawal: ${mdbf.withdrawalCount} · Delay: ${mdbf.delayCount}`} />
+                  sub={`Withdrawal: ${mdbf.withdrawalCount} · Delay: ${mdbf.delayCount}`}
+                  onClick={() => setShowLogic("service-failure")} />
               </div>
+
+              {showLogic === "mdbf" && (
+                <Card className="bg-primary/5 border-primary/20 shadow-inner">
+                  <CardContent className="p-4 space-y-2">
+                    <h4 className="text-sm font-bold text-primary flex items-center gap-2">
+                      <Gauge className="w-4 h-4" /> MDBF Calculation Logic
+                    </h4>
+                    <div className="bg-card/50 p-3 rounded-lg border border-border/50 font-mono text-xs">
+                      <p>MDBF = Total Fleet Distance ÷ Total Relevant Service Failures</p>
+                      <p className="mt-2 text-muted-foreground">Result: {fmt(mdbf.totalFleetDistance)} ÷ {mdbf.totalServiceFailures} = {fmt(Math.round(mdbf.mdbf))} km</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground italic">
+                      Service failure criteria: Delay ≥ 3 min OR Withdrawal Required = Yes.
+                      Only failures marked as "Relevant" or "Service Failure" class are counted.
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={() => setShowLogic(null)} className="h-6 text-[10px]">Close Logic</Button>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Monthly trend */}
               {mdbf.trend?.length > 0 && (
@@ -360,7 +511,7 @@ export default function Reports() {
 
         {/* ── MDBCF ────────────────────────────────────────────────────────── */}
         <TabsContent value="mdbcf" className="mt-6 space-y-6">
-          {!mdbcf ? <EmptyTab label="MDBCF" /> : (
+          {!mdbcf && mdbcfLoading ? <EmptyTab label="MDBCF" /> : !mdbcf ? <div className="text-center py-20 text-muted-foreground">No MDBCF data found for selected filters.</div> : (
             <>
               <div className="bg-muted/30 border border-border/50 rounded-xl px-5 py-3 text-xs text-muted-foreground">
                 <strong>Formula:</strong> MDBCF = Total Fleet Distance ÷ Service Failures of Identical Items &nbsp;|&nbsp;
@@ -467,7 +618,7 @@ export default function Reports() {
 
         {/* ── MTTR ─────────────────────────────────────────────────────────── */}
         <TabsContent value="mttr" className="mt-6 space-y-6">
-          {!mttr ? <EmptyTab label="MTTR" /> : (
+          {!mttr && mttrLoading ? <EmptyTab label="MTTR" /> : !mttr ? <div className="text-center py-20 text-muted-foreground">No MTTR data found for selected filters.</div> : (
             <>
               <div className="bg-muted/30 border border-border/50 rounded-xl px-5 py-3 text-xs text-muted-foreground">
                 <strong>Formula:</strong> MTTR = Cumulative Repair Time (incl. access) ÷ Relevant Failures &nbsp;|&nbsp;
@@ -539,7 +690,7 @@ export default function Reports() {
 
         {/* ── AVAILABILITY ──────────────────────────────────────────────────── */}
         <TabsContent value="availability" className="mt-6 space-y-6">
-          {!avail ? <EmptyTab label="Availability" /> : (
+          {!avail && availLoading ? <EmptyTab label="Availability" /> : !avail ? <div className="text-center py-20 text-muted-foreground">No Availability data found for selected filters.</div> : (
             <>
               <div className="bg-muted/30 border border-border/50 rounded-xl px-5 py-3 text-xs text-muted-foreground">
                 <strong>Formula:</strong> Availability = [1 − (DT(OPM) + DT(CM)) ÷ Total Time] × 100 &nbsp;|&nbsp;
@@ -674,7 +825,7 @@ export default function Reports() {
 
         {/* ── PATTERN FAILURES ──────────────────────────────────────────────── */}
         <TabsContent value="patterns" className="mt-6 space-y-6">
-          {!patterns ? <EmptyTab label="Pattern Failures" /> : (
+          {!patterns && patternsLoading ? <EmptyTab label="Pattern Failures" /> : !patterns ? <div className="text-center py-20 text-muted-foreground">No Pattern Failure data found.</div> : (
             <>
               <div className="bg-muted/30 border border-border/50 rounded-xl px-5 py-3 text-xs text-muted-foreground">
                 <strong>Criterion (RAMS Plan §19.2.6(iv)):</strong>{" "}
