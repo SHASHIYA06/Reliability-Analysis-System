@@ -51,6 +51,7 @@ router.post("/tools", async (req, res) => {
       issuedDate: body.issuedDate ?? body.issued_date ?? null,
       remarks: body.remarks ?? null,
       qty: body.qty != null ? Number(body.qty) : 1,
+      consumable: !!body.consumable,
       updatedAt: new Date(),
     };
 
@@ -97,6 +98,7 @@ router.put("/tools/:id", async (req, res) => {
     }
     if (body.remarks !== undefined) data.remarks = body.remarks;
     if (body.qty !== undefined) data.qty = Number(body.qty);
+    if (body.consumable !== undefined) data.consumable = !!body.consumable;
 
     const [row] = await db
       .update(toolsTable)
@@ -135,8 +137,8 @@ router.post("/tools/import", async (req, res) => {
 
     const toInsert = records.map((r, i) => ({
       id: r.id || `TOOL-IMP-${Date.now()}-${i}`,
-      toolId: r.toolId ?? r.tool_id,
-      toolName: r.toolName ?? r.tool_name,
+      toolId: String(r.toolId ?? r.tool_id ?? ""),
+      toolName: String(r.toolName ?? r.tool_name ?? ""),
       toolNumber: r.toolNumber ?? r.tool_number ?? null,
       category: r.category ?? null,
       location: r.location ?? null,
@@ -146,6 +148,7 @@ router.post("/tools/import", async (req, res) => {
       issuedDate: r.issuedDate ?? r.issued_date ?? null,
       remarks: r.remarks ?? null,
       qty: r.qty != null ? Number(r.qty) : 1,
+      consumable: r.consumable === "Yes" || r.consumable === "true" || !!r.consumable,
       updatedAt: new Date(),
     }));
 
@@ -156,27 +159,35 @@ router.post("/tools/import", async (req, res) => {
       return;
     }
 
-    await db
-      .insert(toolsTable)
-      .values(validRows)
-      .onConflictDoUpdate({
-        target: toolsTable.toolId,
-        set: {
-          toolName: sql`EXCLUDED.tool_name`,
-          toolNumber: sql`EXCLUDED.item_code`,
-          category: sql`EXCLUDED.category`,
-          location: sql`EXCLUDED.location`,
-          condition: sql`EXCLUDED.condition`,
-          calibrationDue: sql`EXCLUDED.last_updated`,
-          issuedTo: sql`EXCLUDED.issued_to`,
-          issuedDate: sql`EXCLUDED.issued_date`,
-          remarks: sql`EXCLUDED.remarks`,
-          qty: sql`EXCLUDED.qty`,
-          updatedAt: new Date(),
-        },
-      });
+    // Split validRows into smaller chunks for batch insertion to avoid database limit issues
+    const CHUNK_SIZE = 50;
+    let imported = 0;
+    for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
+      const chunk = validRows.slice(i, i + CHUNK_SIZE);
+      await db
+        .insert(toolsTable)
+        .values(chunk)
+        .onConflictDoUpdate({
+          target: toolsTable.toolId,
+          set: {
+            toolName: sql`EXCLUDED.tool_name`,
+            toolNumber: sql`EXCLUDED.tool_number`,
+            category: sql`EXCLUDED.category`,
+            location: sql`EXCLUDED.location`,
+            condition: sql`EXCLUDED.condition`,
+            calibrationDue: sql`EXCLUDED.calibration_due`,
+            issuedTo: sql`EXCLUDED.issued_to`,
+            issuedDate: sql`EXCLUDED.issued_date`,
+            remarks: sql`EXCLUDED.remarks`,
+            qty: sql`EXCLUDED.qty`,
+            consumable: sql`EXCLUDED.consumable`,
+            updatedAt: new Date(),
+          },
+        });
+      imported += chunk.length;
+    }
 
-    res.json({ imported: validRows.length });
+    res.json({ imported });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

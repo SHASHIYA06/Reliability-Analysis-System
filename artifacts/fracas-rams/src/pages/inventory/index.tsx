@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 import { API_BASE as BASE } from "@/lib/api-base";
 import { format } from "date-fns";
@@ -19,27 +19,18 @@ import {
 
 type InvItem = {
   id: string; partNo: string; description: string; system: string; category: string;
-  qty: number; minQty: number; unit: string; location: string; vendor: string;
-  unitCost: number; lastReceived: string; condition: string;
+  qty: number; reservedQty: number; minQty: number; recommendedQty: number;
+  unit: string; location: string; vendor: string; unitCost: number;
+  isCritical: number; expiryDate: string | null; condition: string;
+  lastReceived: string;
 };
 
-const INITIAL_INV: InvItem[] = [
-  { id: "INV-001", partNo: "DDU-4200", description: "Door Drive Unit", system: "Door System", category: "LRU", qty: 8, minQty: 4, unit: "Nos", location: "Store-A/Rack-1", vendor: "Faiveley", unitCost: 85000, lastReceived: "2025-01-15", condition: "New" },
-  { id: "INV-002", partNo: "APS-8001", description: "Auxiliary Converter Unit", system: "Auxiliary Electric", category: "LRU", qty: 3, minQty: 2, unit: "Nos", location: "Store-A/Rack-2", vendor: "SMA", unitCost: 320000, lastReceived: "2024-11-10", condition: "New" },
-  { id: "INV-003", partNo: "SHOE-001", description: "Current Collector Shoe", system: "Traction System", category: "Consumable", qty: 48, minQty: 24, unit: "Nos", location: "Store-B/Bin-5", vendor: "Schunk", unitCost: 12000, lastReceived: "2025-02-20", condition: "New" },
-  { id: "INV-004", partNo: "HVAC-F001", description: "HVAC Filter Element", system: "Air Conditioning", category: "Consumable", qty: 24, minQty: 20, unit: "Nos", location: "Store-B/Bin-3", vendor: "Faiveley", unitCost: 2500, lastReceived: "2025-03-01", condition: "New" },
-  { id: "INV-005", partNo: "ASP-2104", description: "Air Spring Assembly", system: "Bogie & Suspension", category: "LRU", qty: 6, minQty: 4, unit: "Sets", location: "Store-C/Rack-1", vendor: "Knorr", unitCost: 45000, lastReceived: "2024-12-15", condition: "New" },
-  { id: "INV-006", partNo: "TCMS-C10", description: "TCMS Central Unit", system: "TIMS", category: "LRU", qty: 2, minQty: 1, unit: "Nos", location: "Electronics Lab", vendor: "Mitsubishi", unitCost: 450000, lastReceived: "2024-10-01", condition: "New" },
-  { id: "INV-007", partNo: "BRK-PAD", description: "Brake Pad Set", system: "Brake System", category: "Consumable", qty: 120, minQty: 60, unit: "Sets", location: "Store-B/Bin-7", vendor: "Knorr", unitCost: 8500, lastReceived: "2025-03-10", condition: "New" },
-  { id: "INV-008", partNo: "MCB-63A", description: "MCB 63A (Protection)", system: "Auxiliary Electric", category: "Consumable", qty: 15, minQty: 10, unit: "Nos", location: "Store-A/Bin-2", vendor: "ABB", unitCost: 1800, lastReceived: "2025-01-20", condition: "New" },
-  { id: "INV-009", partNo: "INV-5030", description: "VVVF Traction Inverter", system: "Traction System", category: "LRU", qty: 1, minQty: 1, unit: "Nos", location: "Store-C/Rack-3", vendor: "Hitachi", unitCost: 1250000, lastReceived: "2024-09-01", condition: "Repaired" },
-  { id: "INV-010", partNo: "SEAL-DOR", description: "Door Rubber Seal (per m)", system: "Door System", category: "Consumable", qty: 200, minQty: 100, unit: "Mtr", location: "Store-B/Bin-9", vendor: "Faiveley", unitCost: 450, lastReceived: "2025-02-10", condition: "New" },
-  { id: "INV-011", partNo: "COMP-001", description: "Air Compressor Unit", system: "Pneumatic System", category: "LRU", qty: 2, minQty: 1, unit: "Nos", location: "Store-C/Rack-2", vendor: "Knorr", unitCost: 185000, lastReceived: "2025-01-05", condition: "New" },
-  { id: "INV-012", partNo: "LUBR-001", description: "Wheel Flange Lubricant", system: "Wheel & Axle", category: "Consumable", qty: 50, minQty: 30, unit: "Ltr", location: "Store-B/Bin-1", vendor: "Shell", unitCost: 1200, lastReceived: "2025-02-28", condition: "New" },
-  { id: "INV-013", partNo: "BTRY-001", description: "Battery Pack (110V)", system: "Auxiliary Electric", category: "LRU", qty: 4, minQty: 2, unit: "Nos", location: "Store-A/Rack-3", vendor: "Exide", unitCost: 62000, lastReceived: "2024-11-20", condition: "New" },
-  { id: "INV-014", partNo: "HORN-001", description: "Air Horn Assembly", system: "Pneumatic System", category: "Spare Part", qty: 6, minQty: 3, unit: "Nos", location: "Store-A/Bin-4", vendor: "Knorr", unitCost: 8500, lastReceived: "2025-01-10", condition: "New" },
-  { id: "INV-015", partNo: "PCBA-TCU", description: "Traction Control PCB", system: "Traction System", category: "LRU", qty: 2, minQty: 1, unit: "Nos", location: "Electronics Lab", vendor: "Hitachi", unitCost: 380000, lastReceived: "2024-08-15", condition: "New" },
-];
+type InvTxn = {
+  id: string; itemId: string; partNo: string; type: string; qty: number;
+  qtyBefore: number; qtyAfter: number; fromLocation: string; toLocation: string;
+  referenceId: string; referenceType: string; initiatedBy: string;
+  remarks: string; timestamp: string;
+};
 
 const CATEGORIES = ["LRU", "Consumable", "Spare Part", "Tool", "Other"];
 const SYSTEMS = SYSTEM_TAXONOMY.map(s => s.name);
@@ -48,19 +39,26 @@ const STATUS_COLORS: Record<string, string> = {
   OK: "bg-green-500/10 text-green-400 border-green-500/30",
   Low: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
   Critical: "bg-red-500/10 text-red-400 border-red-500/30",
+  Reserved: "bg-blue-500/10 text-blue-400 border-blue-500/30",
 };
 
-const BLANK_FORM = { partNo: "", description: "", system: "", category: "LRU", qty: "", minQty: "", unit: "Nos", location: "", vendor: "", unitCost: "", condition: "New" };
+const BLANK_FORM = {
+  partNo: "", description: "", system: "", category: "LRU", qty: "",
+  minQty: "", recommendedQty: "5", unit: "Nos", location: "Central Store",
+  vendor: "", unitCost: "", isCritical: "0", expiryDate: "", condition: "New"
+};
 
-function getStatus(qty: number, minQty: number) {
-  if (qty === 0) return "Critical";
-  if (qty < minQty) return "Low";
+function getStatus(i: InvItem): string {
+  if (i.qty === 0) return "Critical";
+  if (i.qty < i.minQty) return "Low";
+  if (i.reservedQty > 0) return "Reserved";
   return "OK";
 }
 
 export default function InventoryPage() {
   const { toast } = useToast();
   const importRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<"items" | "transactions">("items");
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
   const [filterSystem, setFilterSystem] = useState("");
@@ -68,20 +66,39 @@ export default function InventoryPage() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [items, setItems] = useState<InvItem[]>([]);
+  const [transactions, setTransactions] = useState<InvTxn[]>([]);
 
   const fetchItems = useCallback(async () => {
-    try { const res = await fetch(`${BASE}/api/inventory`); if (res.ok) setItems(await res.json()); } catch { }
+    try {
+      const res = await fetch(`${BASE}/api/inventory`);
+      if (res.ok) setItems(await res.json());
+    } catch { }
   }, []);
-  useEffect(() => { fetchItems(); }, [fetchItems]);
+
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE}/api/inventory/transactions`);
+      if (res.ok) setTransactions(await res.json());
+    } catch { }
+  }, []);
+
+  useEffect(() => {
+    fetchItems();
+    if (activeTab === "transactions") fetchTransactions();
+  }, [fetchItems, fetchTransactions, activeTab]);
+
   const [form, setForm] = useState<typeof BLANK_FORM>({ ...BLANK_FORM });
   const [showAdjust, setShowAdjust] = useState<InvItem | null>(null);
   const [adjustQty, setAdjustQty] = useState("");
-  const [adjustType, setAdjustType] = useState<"issue" | "receive">("receive");
+  const [adjustType, setAdjustType] = useState<string>("Issue");
+  const [refId, setRefId] = useState("");
+  const [refType, setRefType] = useState("NCR");
+  const [remarks, setRemarks] = useState("");
 
   const filtered = items.filter(i => {
     if (filterCat && i.category !== filterCat) return false;
     if (filterSystem && i.system !== filterSystem) return false;
-    if (filterStatus && getStatus(i.qty, i.minQty) !== filterStatus) return false;
+    if (filterStatus && getStatus(i) !== filterStatus) return false;
     if (search) {
       const q = search.toLowerCase();
       if (!i.partNo.toLowerCase().includes(q) && !i.description.toLowerCase().includes(q) && !i.vendor.toLowerCase().includes(q)) return false;
@@ -89,13 +106,38 @@ export default function InventoryPage() {
     return true;
   });
 
-  const lowStockItems = items.filter(i => i.qty < i.minQty);
-  const totalValue = items.reduce((s, i) => s + i.qty * i.unitCost, 0);
+  const lowStockItems = items.filter(i => i.qty <= i.minQty);
+  const totalValue = items.reduce((sum: number, item: InvItem) => sum + item.qty * item.unitCost, 0);
+  const shortages = items.filter((i: InvItem) => i.qty < i.minQty).length;
+  const criticals = items.filter((i: InvItem) => i.qty === 0 && i.isCritical === 1).length;
+
+  const last7DaysIssuance = transactions
+    .filter((t: InvTxn) => {
+      const d = new Date(t.timestamp);
+      const now = new Date();
+      return t.type === "Issue" && (now.getTime() - d.getTime()) < 7 * 24 * 60 * 60 * 1000;
+    })
+    .reduce((sum: number, t: InvTxn) => sum + Math.abs(t.qty), 0);
+  const forecasted30DayNeed = Math.round((last7DaysIssuance / 7) * 30);
+
+  const stats = [
+    { label: "Total Asset Value", value: `₹${(totalValue / 100000).toFixed(2)}L`, color: "text-foreground", trend: "Current Book Value" },
+    { label: "Shortage Items", value: shortages, color: shortages > 0 ? "text-red-400" : "text-emerald-400", trend: "Requires Re-order" },
+    { label: "Critical Lows", value: criticals, color: criticals > 0 ? "text-orange-400" : "text-emerald-400", trend: "0 Stock Items" },
+    { label: "30D Forecast", value: forecasted30DayNeed, color: "text-blue-400", trend: "Based on 7-day usage" },
+  ];
 
   const openAdd = () => { setEditId(null); setForm({ ...BLANK_FORM }); setShowForm(true); };
   const openEdit = (item: InvItem) => {
     setEditId(item.id);
-    setForm({ partNo: item.partNo, description: item.description, system: item.system, category: item.category, qty: String(item.qty), minQty: String(item.minQty), unit: item.unit, location: item.location, vendor: item.vendor, unitCost: String(item.unitCost), condition: item.condition });
+    setForm({
+      partNo: item.partNo, description: item.description, system: item.system || "",
+      category: item.category || "LRU", qty: String(item.qty), minQty: String(item.minQty),
+      recommendedQty: String(item.recommendedQty || 5), unit: item.unit || "Nos",
+      location: item.location || "Central Store", vendor: item.vendor || "",
+      unitCost: String(item.unitCost), isCritical: String(item.isCritical || 0),
+      expiryDate: item.expiryDate || "", condition: item.condition || "New"
+    });
     setShowForm(true);
   };
 
@@ -103,12 +145,19 @@ export default function InventoryPage() {
     if (!form.partNo || !form.description) {
       toast({ title: "Required Fields Missing", description: "Part No. and Description are required.", variant: "destructive" }); return;
     }
-    const payload = { ...form, qty: Number(form.qty) || 0, minQty: Number(form.minQty) || 0, unitCost: Number(form.unitCost) || 0 };
+    const payload = {
+      ...form,
+      qty: Number(form.qty) || 0,
+      minQty: Number(form.minQty) || 0,
+      recommendedQty: Number(form.recommendedQty) || 0,
+      unitCost: Number(form.unitCost) || 0,
+      isCritical: Number(form.isCritical) || 0
+    };
     if (editId) {
       await fetch(`${BASE}/api/inventory/${editId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       toast({ title: "Item Updated", description: `${editId} updated successfully.` });
     } else {
-      const n = `INV-${String(items.length + 1).padStart(3, "0")}`;
+      const n = `INV-${Date.now()}`;
       await fetch(`${BASE}/api/inventory`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n, ...payload, lastReceived: format(new Date(), "yyyy-MM-dd") }) });
       toast({ title: "Item Added to Store", description: `${n} — ${form.description} added.` });
     }
@@ -117,6 +166,7 @@ export default function InventoryPage() {
   };
 
   const handleDelete = async (item: InvItem) => {
+    if (!confirm(`Are you sure you want to remove ${item.partNo} from inventory?`)) return;
     await fetch(`${BASE}/api/inventory/${item.id}`, { method: "DELETE" });
     toast({ title: "Item Removed", description: `${item.partNo} removed from inventory.` });
     fetchItems();
@@ -126,18 +176,34 @@ export default function InventoryPage() {
     if (!showAdjust || !adjustQty) { toast({ title: "Enter quantity", variant: "destructive" }); return; }
     const delta = Number(adjustQty);
     if (isNaN(delta) || delta <= 0) { toast({ title: "Invalid quantity", variant: "destructive" }); return; }
-    const item = showAdjust;
-    const newQty = adjustType === "receive" ? item.qty + delta : Math.max(0, item.qty - delta);
-    const newLastReceived = adjustType === "receive" ? format(new Date(), "yyyy-MM-dd") : item.lastReceived;
-    await fetch(`${BASE}/api/inventory/${item.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ qty: newQty, lastReceived: newLastReceived }) });
-    toast({ title: `Stock ${adjustType === "receive" ? "Received" : "Issued"}`, description: `${delta} ${item.unit} ${adjustType === "receive" ? "added to" : "removed from"} ${item.partNo}.` });
-    setShowAdjust(null);
-    fetchItems();
+
+    const res = await fetch(`${BASE}/api/inventory/transaction`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        itemId: showAdjust.id,
+        type: adjustType,
+        qty: delta,
+        referenceId: refId,
+        referenceType: refType,
+        remarks: remarks
+      })
+    });
+
+    if (res.ok) {
+      toast({ title: "Transaction Completed", description: `Processed ${adjustType} for ${showAdjust.partNo}.` });
+      setShowAdjust(null);
+      setAdjustQty(""); setRefId(""); setRemarks("");
+      fetchItems();
+      fetchTransactions();
+    } else {
+      toast({ title: "Transaction Failed", variant: "destructive" });
+    }
   };
 
   const exportCSV = () => {
-    const rows = [["ID", "Part No", "Description", "System", "Category", "Qty", "Min Qty", "Unit", "Location", "Vendor", "Unit Cost", "Total Value", "Status"]];
-    for (const i of filtered) rows.push([i.id, i.partNo, i.description, i.system, i.category, String(i.qty), String(i.minQty), i.unit, i.location, i.vendor, String(i.unitCost), String(i.qty * i.unitCost), getStatus(i.qty, i.minQty)]);
+    const rows = [["ID", "Part No", "Description", "System", "Category", "Qty", "Reserved", "Min Qty", "Unit", "Location", "Vendor", "Unit Cost", "Critical", "Status"]];
+    for (const i of filtered) rows.push([i.id, i.partNo, i.description, i.system, i.category, String(i.qty), String(i.reservedQty), String(i.minQty), i.unit, i.location, i.vendor, String(i.unitCost), i.isCritical ? "Y" : "N", getStatus(i)]);
     const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = `Store_Inventory_${format(new Date(), "yyyyMMdd")}.csv`; a.click();
@@ -224,6 +290,43 @@ export default function InventoryPage() {
     e.target.value = "";
   };
 
+  const printShortageReport = () => {
+    const shortItems = items.filter(i => i.qty < i.minQty);
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html><head>
+<title>Shortage & Procurement Report</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  body { font-family: sans-serif; font-size: 8.5pt; }
+  .h { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f1f1f1; text-align: left; padding: 6px; border: 1px solid #ccc; font-weight: 900; }
+  td { padding: 6px; border: 1px solid #ccc; }
+  .urg { color: #d00; font-weight: bold; }
+</style></head><body>
+<div class="h">
+  <div style="font-size:14pt;font-weight:900">SHORTAGE & RE-ORDER REPORT</div>
+  <div style="font-size:9pt;color:#666">Generating automated procurement requirements based on re-order levels.</div>
+  <div style="margin-top:5px">Date: ${format(new Date(), "PPpp")}</div>
+</div>
+<table>
+  <thead><tr><th>Part No</th><th>Description</th><th>Avail</th><th>Min</th><th>Req. Qty</th><th>OEM/Vendor</th><th>Priority</th></tr></thead>
+  <tbody>
+    ${shortItems.map(i => `
+      <tr>
+        <td><b>${i.partNo}</b></td><td>${i.description}</td>
+        <td>${i.qty}</td><td>${i.minQty}</td>
+        <td><b>${i.minQty * 2 - i.qty}</b></td><td>${i.vendor || "-"}</td>
+        <td class="${i.qty === 0 ? "urg" : ""}">${i.qty === 0 ? "CRITICAL" : "STANDARD"}</td>
+      </tr>`).join("")}
+  </tbody>
+</table>
+</body></html>`);
+    win.document.close();
+    win.print();
+  };
+
   const printStoreReport = () => {
     const lowItems = items.filter(i => i.qty < i.minQty);
     const win = window.open("", "_blank");
@@ -259,8 +362,8 @@ export default function InventoryPage() {
 <table>
   <thead><tr><th>#</th><th>Part No</th><th>Description</th><th>System</th><th>Qty</th><th>Min</th><th>Unit</th><th>Location</th><th>Vendor</th><th>Unit Cost (₹)</th><th>Status</th></tr></thead>
   <tbody>
-    ${items.map((i, idx) => {
-      const st = getStatus(i.qty, i.minQty);
+    ${items.map((i: InvItem, idx: number) => {
+      const st = getStatus(i);
       return `<tr class="${st === "Critical" ? "critical" : st === "Low" ? "low" : ""}">
         <td>${idx + 1}</td><td><b>${i.partNo}</b></td><td>${i.description}</td><td>${i.system}</td>
         <td><b>${i.qty}</b></td><td>${i.minQty}</td><td>${i.unit}</td><td>${i.location}</td><td>${i.vendor}</td>
@@ -289,11 +392,11 @@ export default function InventoryPage() {
           </div>
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/60">
-              Inventory Master
+              Inventory Systems
             </h1>
             <p className="text-sm text-muted-foreground font-medium flex items-center gap-2 mt-0.5">
               <span className={`inline-block w-2 h-2 rounded-full ${lowStockItems.length > 0 ? "bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"}`} />
-              Real-time stock management & spare parts tracking
+              DLP Store & Asset Spares Management
             </p>
           </div>
         </div>
@@ -301,254 +404,367 @@ export default function InventoryPage() {
           <Button variant="outline" size="sm" onClick={() => importRef.current?.click()} className="bg-card hover:bg-muted font-semibold border-border">
             <Upload className="w-4 h-4 mr-2 text-emerald-400" /> Import CSV
           </Button>
-          <Button variant="outline" size="sm" onClick={exportCSV} className="bg-card hover:bg-muted font-semibold border-border">
-            <Download className="w-4 h-4 mr-2" /> Export
-          </Button>
-          <Button variant="outline" size="sm" onClick={printStoreReport} className="bg-card hover:bg-muted font-semibold border-border">
-            <Printer className="w-4 h-4 mr-2" /> Print
+          <Button variant="outline" size="sm" onClick={printShortageReport} className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 font-bold border-orange-500/30">
+            <TrendingDown className="w-4 h-4 mr-2" /> Shortages Report
           </Button>
           <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20" onClick={openAdd}>
-            <Plus className="w-4 h-4 mr-1.5" /> Add Item
+            <Plus className="w-4 h-4 mr-1.5" /> Add Master Item
           </Button>
         </div>
       </div>
 
-      {lowStockItems.length > 0 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 flex items-start gap-3">
-          <TrendingDown className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <div className="font-semibold text-yellow-400 text-sm">{lowStockItems.length} item(s) below minimum stock level — please initiate procurement.</div>
-            <div className="text-xs text-muted-foreground">{lowStockItems.map(i => `${i.partNo} (${i.qty}/${i.minQty} ${i.unit})`).join(" · ")}</div>
-          </div>
-        </div>
-      )}
+      <div className="flex gap-2 border-b border-border/50 pb-px">
+        <button onClick={() => setActiveTab("items")} className={`px-4 py-2 text-sm font-bold transition-all border-b-2 ${activeTab === "items" ? "border-emerald-500 text-emerald-400" : "border-transparent text-muted-foreground hover:text-foreground"}`}>Item Master</button>
+        <button onClick={() => setActiveTab("transactions")} className={`px-4 py-2 text-sm font-bold transition-all border-b-2 ${activeTab === "transactions" ? "border-emerald-500 text-emerald-400" : "border-transparent text-muted-foreground hover:text-foreground"}`}>Inventory Transactions</button>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Total Items", value: items.length, color: "text-foreground" },
-          { label: "Low Stock", value: lowStockItems.length, color: lowStockItems.length > 0 ? "text-yellow-400" : "text-green-400" },
-          { label: "Zero Stock", value: items.filter(i => i.qty === 0).length, color: items.filter(i => i.qty === 0).length > 0 ? "text-red-400" : "text-green-400" },
-          { label: "Inventory Value", value: `₹${(totalValue / 100000).toFixed(1)}L`, color: "text-primary" },
-        ].map(s => (
+        {stats.map(s => (
           <Card key={s.label} className="bg-card border-border/50">
             <CardContent className="p-3">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-muted-foreground">{s.label}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-tight font-black opacity-70">{s.label}</div>
+              {s.trend && <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">{s.trend}</div>}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-44">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search part number, description or vendor..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-card border-border text-sm" />
-        </div>
-        <Select value={filterCat || "__all__"} onValueChange={v => setFilterCat(v === "__all__" ? "" : v)}>
-          <SelectTrigger className="w-36 bg-card border-border text-sm"><SelectValue placeholder="All Categories" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Categories</SelectItem>
-            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterSystem || "__all__"} onValueChange={v => setFilterSystem(v === "__all__" ? "" : v)}>
-          <SelectTrigger className="w-44 bg-card border-border text-sm"><SelectValue placeholder="All Systems" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Systems</SelectItem>
-            {SYSTEMS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus || "__all__"} onValueChange={v => setFilterStatus(v === "__all__" ? "" : v)}>
-          <SelectTrigger className="w-32 bg-card border-border text-sm"><SelectValue placeholder="All Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Status</SelectItem>
-            <SelectItem value="OK">OK</SelectItem>
-            <SelectItem value="Low">Low</SelectItem>
-            <SelectItem value="Critical">Critical</SelectItem>
-          </SelectContent>
-        </Select>
-        {(filterCat || filterSystem || filterStatus || search) && <Button variant="ghost" size="sm" onClick={() => { setFilterCat(""); setFilterSystem(""); setFilterStatus(""); setSearch(""); }}>Clear</Button>}
-        <span className="text-xs text-muted-foreground self-center">{filtered.length} of {items.length}</span>
-      </div>
+      {activeTab === "items" ? (
+        <>
+          <div className="flex gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-44">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search part number, description or vendor..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-card border-border text-sm" />
+            </div>
+            <Select value={filterCat || "__all__"} onValueChange={v => setFilterCat(v === "__all__" ? "" : v)}>
+              <SelectTrigger className="w-36 bg-card border-border text-sm"><SelectValue placeholder="All Categories" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Categories</SelectItem>
+                {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterSystem || "__all__"} onValueChange={v => setFilterSystem(v === "__all__" ? "" : v)}>
+              <SelectTrigger className="w-44 bg-card border-border text-sm"><SelectValue placeholder="All Systems" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Systems</SelectItem>
+                {SYSTEMS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus || "__all__"} onValueChange={v => setFilterStatus(v === "__all__" ? "" : v)}>
+              <SelectTrigger className="w-32 bg-card border-border text-sm"><SelectValue placeholder="All Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Status</SelectItem>
+                <SelectItem value="OK">OK</SelectItem>
+                <SelectItem value="Low">Low Stock</SelectItem>
+                <SelectItem value="Critical">Critical (Zero)</SelectItem>
+                <SelectItem value="Reserved">With Reservations</SelectItem>
+              </SelectContent>
+            </Select>
+            {(filterCat || filterSystem || filterStatus || search) && <Button variant="ghost" size="sm" onClick={() => { setFilterCat(""); setFilterSystem(""); setFilterStatus(""); setSearch(""); }}>Clear</Button>}
+          </div>
 
-      <Card className="bg-card border-border/50 shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
-              <tr>
-                <th className="px-4 py-3 text-left">Part No.</th>
-                <th className="px-4 py-3 text-left">Description</th>
-                <th className="px-4 py-3 text-left">System</th>
-                <th className="px-4 py-3 text-left">Category</th>
-                <th className="px-4 py-3 text-center">Qty</th>
-                <th className="px-4 py-3 text-center">Min</th>
-                <th className="px-4 py-3 text-left">Unit</th>
-                <th className="px-4 py-3 text-left">Location</th>
-                <th className="px-4 py-3 text-left">Vendor</th>
-                <th className="px-4 py-3 text-right">Unit Cost (₹)</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={12} className="px-6 py-8 text-center text-muted-foreground">No inventory items found.</td></tr>
-              ) : filtered.map(i => {
-                const status = getStatus(i.qty, i.minQty);
-                return (
-                  <tr key={i.id} className={`border-b border-border/40 hover:bg-muted/30 ${status === "Critical" ? "bg-red-500/5" : status === "Low" ? "bg-yellow-500/5" : ""}`}>
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary font-bold">{i.partNo}</td>
-                    <td className="px-4 py-2.5 text-sm font-medium max-w-40 truncate" title={i.description}>{i.description}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-28 truncate">{i.system}</td>
-                    <td className="px-4 py-2.5 text-xs">{i.category}</td>
-                    <td className="px-4 py-2.5 text-center font-mono font-bold">
-                      <span className={status === "Critical" ? "text-red-400" : status === "Low" ? "text-yellow-400" : "text-foreground"}>{i.qty}</span>
-                    </td>
-                    <td className="px-4 py-2.5 text-center text-muted-foreground text-xs">{i.minQty}</td>
-                    <td className="px-4 py-2.5 text-xs">{i.unit}</td>
-                    <td className="px-4 py-2.5 text-xs">{i.location}</td>
-                    <td className="px-4 py-2.5 text-xs">{i.vendor}</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs">{i.unitCost.toLocaleString("en-IN")}</td>
-                    <td className="px-4 py-2.5">
-                      <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[status]}`}>{status}</Badge>
-                    </td>
-                    <td className="px-4 py-2.5 text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem onClick={() => openEdit(i)}>
-                            <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit Item
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => { setShowAdjust(i); setAdjustType("receive"); setAdjustQty(""); }}>
-                            <ArrowUpDown className="w-3.5 h-3.5 mr-2" /> Adjust Stock
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(i)}>
-                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+          <Card className="bg-card border-border/50 shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-[10px] text-muted-foreground uppercase bg-muted/30 border-b border-border font-black tracking-widest">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Part No.</th>
+                    <th className="px-4 py-3 text-left">Item Description</th>
+                    <th className="px-4 py-3 text-left">System</th>
+                    <th className="px-4 py-3 text-center">Available</th>
+                    <th className="px-4 py-3 text-center">Reserved</th>
+                    <th className="px-4 py-3 text-center">Min/Rec</th>
+                    <th className="px-4 py-3 text-left">Location</th>
+                    <th className="px-4 py-3 text-left">Vendor</th>
+                    <th className="px-4 py-3 text-left">Status</th>
+                    <th className="px-4 py-3 text-center">Actions</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Add / Edit Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{editId ? "Edit Inventory Item" : "Add Inventory Item"}</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowForm(false)}>✕</Button>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={10} className="px-6 py-12 text-center text-muted-foreground font-medium italic">No items matching criteria.</td></tr>
+                  ) : filtered.map((i: InvItem) => {
+                    const status = getStatus(i);
+                    return (
+                      <tr key={i.id} className={`border-b border-border/40 hover:bg-muted/30 transition-colors ${status === "Critical" ? "bg-red-500/5" : status === "Low" ? "bg-yellow-500/5" : ""}`}>
+                        <td className="px-4 py-2.5 font-mono text-xs text-primary font-bold group-hover:text-primary/80">{i.partNo}</td>
+                        <td className="px-4 py-2.5">
+                          <div className="text-sm font-semibold text-foreground leading-tight">{i.description}</div>
+                          <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-black mt-0.5">{i.category}</div>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[120px] truncate">{i.system}</td>
+                        <td className="px-4 py-2.5 text-center font-mono font-black text-sm">
+                          <span className={status === "Critical" ? "text-red-400" : status === "Low" ? "text-yellow-400" : "text-emerald-400"}>{i.qty}</span>
+                          <span className="text-[10px] text-muted-foreground ml-1 opacity-60 font-normal">{i.unit}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-center font-mono text-xs text-blue-400/80">
+                          {i.reservedQty > 0 ? `${i.reservedQty} ${i.unit}` : "-"}
+                        </td>
+                        <td className="px-4 py-2.5 text-center text-[10px] space-y-0.5">
+                          <div className="text-muted-foreground">Min: <span className="text-foreground/80 font-bold">{i.minQty}</span></div>
+                          <div className="text-muted-foreground">Rec: <span className="text-foreground/80 font-bold">{i.recommendedQty}</span></div>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs font-medium text-muted-foreground">{i.location}</td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground truncate max-w-[120px]" title={i.vendor}>{i.vendor}</td>
+                        <td className="px-4 py-2.5">
+                          <Badge variant="outline" className={`text-[10px] uppercase tracking-tighter px-1.5 py-0 rounded-md ring-1 ring-inset ${STATUS_COLORS[status]}`}>{status}</Badge>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted border-none">
+                                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-xl border-border/50 shadow-2xl">
+                              <DropdownMenuItem onClick={() => openEdit(i)} className="gap-2 py-2.5 cursor-pointer">
+                                <Edit2 className="w-4 h-4 text-primary" />
+                                <div className="flex flex-col"><span className="text-sm font-bold">Edit Master Detail</span><span className="text-[10px] text-muted-foreground">Update specs and reorder levels</span></div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { setShowAdjust(i); setAdjustType("Issue"); setAdjustQty(""); setRefType("NCR"); }} className="gap-2 py-2.5 cursor-pointer">
+                                <ArrowUpDown className="w-4 h-4 text-emerald-400" />
+                                <div className="flex flex-col"><span className="text-sm font-bold">Inbound / Outbound</span><span className="text-[10px] text-muted-foreground">Log receipts or maintenance issues</span></div>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-border/50" />
+                              <DropdownMenuItem className="text-destructive gap-2 py-2.5 cursor-pointer hover:bg-destructive/10" onClick={() => handleDelete(i)}>
+                                <Trash2 className="w-4 h-4" />
+                                <div className="flex flex-col"><span className="text-sm font-bold uppercase">Decommission</span><span className="text-[10px] opacity-70">Remove from master inventory</span></div>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Part No. *</label>
-                <Input value={form.partNo} onChange={e => setForm(f => ({ ...f, partNo: e.target.value }))} placeholder="e.g. DDU-4201" className="bg-background border-border" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Category</label>
-                <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Description *</label>
-                <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Item description" className="bg-background border-border" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">System</label>
-                <Select value={form.system} onValueChange={v => setForm(f => ({ ...f, system: v }))}>
-                  <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select system" /></SelectTrigger>
-                  <SelectContent>{SYSTEMS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Vendor</label>
-                <Input value={form.vendor} onChange={e => setForm(f => ({ ...f, vendor: e.target.value }))} placeholder="Vendor name" className="bg-background border-border" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Quantity</label>
-                <Input type="number" value={form.qty} onChange={e => setForm(f => ({ ...f, qty: e.target.value }))} className="bg-background border-border" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Min Qty (Reorder Level)</label>
-                <Input type="number" value={form.minQty} onChange={e => setForm(f => ({ ...f, minQty: e.target.value }))} className="bg-background border-border" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Unit</label>
-                <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
-                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
-                  <SelectContent>{["Nos", "Sets", "Mtr", "Kg", "Ltr", "Box"].map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Unit Cost (₹)</label>
-                <Input type="number" value={form.unitCost} onChange={e => setForm(f => ({ ...f, unitCost: e.target.value }))} className="bg-background border-border" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Location</label>
-                <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Store location" className="bg-background border-border" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Condition</label>
-                <Select value={form.condition} onValueChange={v => setForm(f => ({ ...f, condition: v }))}>
-                  <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
-                  <SelectContent>{["New", "Good", "Repaired", "Defective"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={handleSave}>{editId ? "Update Item" : "Add to Inventory"}</Button>
-              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-            </div>
+          </Card>
+        </>
+      ) : (
+        <Card className="bg-card border-border/50 shadow-lg overflow-hidden animate-in fade-in duration-500">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-[10px] text-muted-foreground uppercase bg-muted/30 border-b border-border font-black tracking-widest">
+                <tr>
+                  <th className="px-4 py-3 text-left">Timestamp</th>
+                  <th className="px-4 py-3 text-left">Item Code</th>
+                  <th className="px-4 py-3 text-left">Type</th>
+                  <th className="px-4 py-3 text-center">Qty</th>
+                  <th className="px-4 py-3 text-center">Prev/Post</th>
+                  <th className="px-4 py-3 text-left">Reference</th>
+                  <th className="px-4 py-3 text-left">Remarks</th>
+                  <th className="px-4 py-3 text-left">In-Charge</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.length === 0 ? (
+                  <tr><td colSpan={8} className="px-6 py-12 text-center text-muted-foreground italic">No transactions recorded yet.</td></tr>
+                ) : transactions.map((t: InvTxn) => (
+                  <tr key={t.id} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
+                    <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{format(new Date(t.timestamp), "dd/MM/yy HH:mm")}</td>
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-primary">{t.partNo}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="outline" className={`text-[10px] font-black uppercase ${t.type === "Receive" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" :
+                        t.type === "Issue" ? "bg-orange-500/10 text-orange-400 border-orange-500/30" :
+                          t.type === "Reserve" ? "bg-blue-500/10 text-blue-400 border-blue-500/30" :
+                            "bg-muted text-muted-foreground"
+                        }`}>{t.type}</Badge>
+                    </td>
+                    <td className={`px-4 py-3 text-center font-black ${t.type === "Receive" || t.type === "Return" ? "text-emerald-400" : "text-orange-400"}`}>{t.type === "Issue" || t.type === "Reserve" ? "-" : "+"}{t.qty}</td>
+                    <td className="px-4 py-3 text-center text-[10px] text-muted-foreground font-mono">{t.qtyBefore} → {t.qtyAfter}</td>
+                    <td className="px-4 py-3">
+                      <div className="text-xs font-bold text-foreground leading-tight">{t.referenceId || "Direct Entry"}</div>
+                      <div className="text-[10px] text-muted-foreground opacity-70 uppercase font-black">{t.referenceType || "-"}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground italic truncate max-w-[150px]" title={t.remarks}>{t.remarks || "-"}</td>
+                    <td className="px-4 py-3 text-[10px] font-medium text-foreground uppercase tracking-tight">{t.initiatedBy || "System Admin"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Stock Adjustment Modal */}
-      {showAdjust && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold">Adjust Stock</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowAdjust(null)}>✕</Button>
-            </div>
-            <div className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-1">
-              <p className="font-mono text-xs text-primary">{showAdjust.partNo}</p>
-              <p className="font-semibold text-sm">{showAdjust.description}</p>
-              <p className="text-xs text-muted-foreground">Current Stock: <span className="font-bold text-foreground">{showAdjust.qty} {showAdjust.unit}</span></p>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Transaction Type</label>
-              <Select value={adjustType} onValueChange={v => setAdjustType(v as "issue" | "receive")}>
-                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="receive">Receive (Add to Stock)</SelectItem>
-                  <SelectItem value="issue">Issue (Remove from Stock)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Quantity ({showAdjust.unit})</label>
-              <Input type="number" value={adjustQty} onChange={e => setAdjustQty(e.target.value)} min="1" placeholder="Enter quantity" className="bg-background border-border" />
-            </div>
-            <div className="flex gap-3 pt-1">
-              <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={confirmAdjust}>Confirm</Button>
-              <Button variant="outline" onClick={() => setShowAdjust(null)}>Cancel</Button>
+      {/* Add / Edit Inventory Modal */}
+      {
+        showForm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="bg-card border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-2xl p-0 overflow-hidden ring-1 ring-white/5">
+              <div className="bg-gradient-to-r from-emerald-600/20 to-cyan-600/20 px-6 py-4 flex items-center justify-between border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 ring-1 ring-emerald-500/50"><Plus className="w-5 h-5 text-emerald-400" /></div>
+                  <div>
+                    <h2 className="text-lg font-black tracking-tight uppercase">{editId ? "Update Master Asset" : "Register New Asset"}</h2>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Depot Level Parts Inventory System</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10" onClick={() => setShowForm(false)}>✕</Button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Part Number *</label>
+                    <Input value={form.partNo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, partNo: e.target.value }))} placeholder="e.g. KMR-001" className="bg-background border-border" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Description *</label>
+                    <Input value={form.description} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="Item description" className="bg-background border-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">System</label>
+                    <Select value={form.system} onValueChange={(v: string) => setForm((f: any) => ({ ...f, system: v }))}>
+                      <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {SYSTEMS.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Category</label>
+                    <Select value={form.category} onValueChange={(v: string) => setForm((f: any) => ({ ...f, category: v }))}>
+                      <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Current Qty</label>
+                    <Input type="number" value={form.qty} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, qty: e.target.value }))} className="bg-background border-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Min Qty (Re-order)</label>
+                    <Input type="number" value={form.minQty} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, minQty: e.target.value }))} className="bg-background border-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Recommended Qty</label>
+                    <Input type="number" value={form.recommendedQty} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, recommendedQty: e.target.value }))} className="bg-background border-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Unit</label>
+                    <Select value={form.unit} onValueChange={(v: string) => setForm((f: any) => ({ ...f, unit: v }))}>
+                      <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["Nos", "Sets", "Mtrs", "Kgs", "Ltrs"].map(u => (<SelectItem key={u} value={u}>{u}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Location</label>
+                    <Input value={form.location} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, location: e.target.value }))} placeholder="Bin location" className="bg-background border-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Unit Cost (₹)</label>
+                    <Input type="number" value={form.unitCost} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, unitCost: e.target.value }))} className="bg-background border-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Condition</label>
+                    <Select value={form.condition} onValueChange={(v: string) => setForm((f: any) => ({ ...f, condition: v }))}>
+                      <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["New", "Serviceable", "Repairable", "Scrap"].map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Reference/OEM</label>
+                    <Input value={form.vendor} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, vendor: e.target.value }))} placeholder="Manufacturer" className="bg-background border-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Expiry Date</label>
+                    <Input type="date" value={form.expiryDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, expiryDate: e.target.value }))} className="bg-background border-border" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-muted/30 px-6 py-4 flex gap-3 justify-end border-t border-white/5">
+                <Button variant="ghost" onClick={() => setShowForm(false)} className="font-bold uppercase tracking-widest text-[10px]">Cancel</Button>
+                <Button className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-900/20 ring-1 ring-white/10" onClick={handleSave}>
+                  {editId ? "Update Ledger" : "Commit to Store"}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+
+      {/* Advanced Stock Transaction Modal */}
+      {
+        showAdjust && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in zoom-in duration-200">
+            <div className="bg-card border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-md p-0 overflow-hidden ring-1 ring-white/5">
+              <div className={`px-6 py-4 flex items-center justify-between border-b border-white/5 ${adjustType === "Receive" ? "bg-emerald-600/20" : "bg-orange-600/20"}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ring-1 ${adjustType === "Receive" ? "bg-emerald-500/20 ring-emerald-500/50 text-emerald-400" : "bg-orange-500/20 ring-orange-500/50 text-orange-400"}`}>
+                    <ArrowUpDown className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black tracking-tight uppercase">Stock {adjustType}</h2>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-extrabold">{showAdjust.partNo} · {showAdjust.qty} {showAdjust.unit} Available</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowAdjust(null)}>✕</Button>
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div className="grid gap-1.5">
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Movement Type</label>
+                  <Select value={adjustType} onValueChange={v => setAdjustType(v)}>
+                    <SelectTrigger className="bg-muted/30 border-white/5 h-11"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Receive">Stock Receipt (Vendor / Transfer)</SelectItem>
+                      <SelectItem value="Issue">Maintenance Issue (NCR / Job Card)</SelectItem>
+                      <SelectItem value="Return">Scrap / Component Return</SelectItem>
+                      <SelectItem value="Reserve" disabled={showAdjust.qty === 0}>Block / Reservation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-1.5">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Quantity ({showAdjust.unit})</label>
+                    <Input type="number" value={adjustQty} onChange={e => setAdjustQty(e.target.value)} min="1" className="bg-muted/30 border-white/5 h-11 text-center font-black text-lg" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Reference ID</label>
+                    <Input value={refId} onChange={e => setRefId(e.target.value.toUpperCase())} placeholder={adjustType === "Issue" ? "NCR-2025-..." : "Invoice / DO"} className="bg-muted/30 border-white/5 h-11 font-mono text-sm" />
+                  </div>
+                </div>
+
+                {adjustType === "Issue" && (
+                  <div className="grid gap-1.5 p-3 rounded-lg bg-orange-500/5 border border-orange-500/20">
+                    <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Maintenance Linkage</label>
+                    <Select value={refType} onValueChange={setRefType}>
+                      <SelectTrigger className="bg-transparent border-none p-0 h-6 text-xs shadow-none focus:ring-0"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NCR">Non-Conformance Report (NCR)</SelectItem>
+                        <SelectItem value="Job Card">Corrective Job Card</SelectItem>
+                        <SelectItem value="PM">Scheduled Preventive Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="grid gap-1.5">
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Transaction Remarks</label>
+                  <Input value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Personnel name, damage details, etc." className="bg-muted/30 border-white/5 h-10 text-xs" />
+                </div>
+              </div>
+
+              <div className="bg-muted/30 px-6 py-4 flex gap-3">
+                <Button variant="outline" onClick={() => setShowAdjust(null)} className="flex-1 font-bold uppercase tracking-widest text-[10px]">Cancel</Button>
+                <Button className={`flex-1 font-black uppercase tracking-widest text-[10px] shadow-lg ${adjustType === "Issue" ? "bg-orange-600 hover:bg-orange-500 shadow-orange-900/20" : "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20"}`} onClick={confirmAdjust}>
+                  Process Movement
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 }

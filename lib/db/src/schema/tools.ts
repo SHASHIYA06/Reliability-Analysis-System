@@ -4,25 +4,19 @@ import { z } from "zod";
 
 export const toolsTable = pgTable("tools", {
   id: text("id").primaryKey(),
-  toolId: text("tool_id").notNull().unique(), // Maps to Inventory ID or similar
+  toolId: text("tool_id").notNull().unique(),
   toolName: text("tool_name").notNull(),
-  toolNumber: text("item_code"), // Match existing DB column 'item_code'
-  inventoryId: text("inventory_id"),
+  toolNumber: text("tool_number"),
   category: text("category"),
   location: text("location"),
   condition: text("condition").default("Good"),
-  qty: integer("qty").default(1),
-  consumable: boolean("consumable").default(false),
-  remarks: text("remarks"),
-  referenceSpec: text("reference_spec"),
-  calibrationDue: text("last_updated"), // Map to existing 'last_updated' to avoid missing column
-  supplier: text("supplier"),
-  manufacturer: text("manufacturer"),
-  modelNumber: text("model_number"),
-  serialNumber: text("serial_number"),
-  lastUpdated: text("last_updated"),
+  calibrationDue: text("calibration_due"),
   issuedTo: text("issued_to"),
   issuedDate: text("issued_date"),
+  remarks: text("remarks"),
+  qty: integer("qty").default(1),
+  consumable: boolean("consumable").default(false),
+  lastUpdated: text("last_updated"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

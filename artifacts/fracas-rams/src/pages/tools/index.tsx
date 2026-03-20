@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 import { API_BASE as BASE } from "@/lib/api-base";
 
@@ -67,6 +67,8 @@ type Tool = {
   id: string;
   name: string;
   toolNo: string;
+  toolId?: string; // Add this
+  toolName?: string; // Add this
   itemCode?: string;
   inventoryId?: string;
   category: string;
@@ -158,11 +160,11 @@ export default function ToolsPage() {
     return true;
   });
 
-  const overdue = tools.filter(t => t.calibrationDue && getDaysLeft(t.calibrationDue) < 0).length;
-  const dueSoon = tools.filter(t => t.calibrationDue && getDaysLeft(t.calibrationDue) >= 0 && getDaysLeft(t.calibrationDue) <= 30).length;
-  const issued = tools.filter(t => t.assignedTo).length;
-  const consumablesCount = tools.filter(t => t.consumable).length;
-  const consumablesQty = tools.filter(t => t.consumable).reduce((sum, t) => sum + (t.qty || 0), 0);
+  const overdue = tools.filter((t: Tool) => t.calibrationDue && getDaysLeft(t.calibrationDue) < 0).length;
+  const dueSoon = tools.filter((t: Tool) => t.calibrationDue && getDaysLeft(t.calibrationDue) >= 0 && getDaysLeft(t.calibrationDue) <= 30).length;
+  const issued = tools.filter((t: Tool) => t.assignedTo).length;
+  const consumablesCount = tools.filter((t: Tool) => t.consumable).length;
+  const consumablesQty = tools.filter((t: Tool) => t.consumable).reduce((sum: number, t: Tool) => sum + (t.qty || 0), 0);
 
   const openAdd = () => { setEditId(null); setForm({ ...BLANK_FORM }); setShowForm(true); };
   const openEdit = (t: Tool) => {
@@ -426,7 +428,7 @@ export default function ToolsPage() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={10} className="px-6 py-8 text-center text-muted-foreground">No tools found.</td></tr>
-              ) : filtered.map(t => {
+              ) : filtered.map((t: Tool) => {
                 const daysLeft = getDaysLeft(t.calibrationDue);
                 return (
                   <tr key={t.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
@@ -439,7 +441,7 @@ export default function ToolsPage() {
                     <td className="px-4 py-2.5 text-center font-bold">{t.qty}</td>
                     <td className="px-4 py-2.5 text-xs">{t.location}</td>
                     <td className="px-4 py-2.5">
-                      <Badge variant="outline" className={`text-[10px] ${CONDITION_COLORS[t.condition] || ""}`}>{t.condition}</Badge>
+                      <Badge variant={"outline" as any} className={`text-[10px] ${CONDITION_COLORS[t.condition] || ""}`}>{t.condition}</Badge>
                     </td>
                     <td className="px-4 py-2.5 text-xs italic text-muted-foreground">
                       {t.referenceSpec || t.modelNumber || t.manufacturer || "---"}
@@ -520,7 +522,7 @@ export default function ToolsPage() {
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Condition</label>
                 <Select value={form.condition} onValueChange={v => setForm(f => ({ ...f, condition: v }))}>
                   <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
-                  <SelectContent>{["Good", "Fair", "Poor", "Defective"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectContent>{["Good", "Fair", "Poor", "Defective"].map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
@@ -565,7 +567,7 @@ export default function ToolsPage() {
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Issue To *</label>
               <Select value={issueUser} onValueChange={setIssueUser}>
                 <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select technician" /></SelectTrigger>
-                <SelectContent>{BEML_USERS.map(u => <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{BEML_USERS.map((u: any) => <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="flex gap-3 pt-1">
