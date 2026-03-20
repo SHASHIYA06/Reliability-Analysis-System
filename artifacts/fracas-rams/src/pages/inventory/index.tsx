@@ -282,24 +282,32 @@ export default function InventoryPage() {
     <div className="space-y-5">
       <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Package className="w-6 h-6 text-primary" /> Store Inventory
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage spare parts, LRUs, and consumables for RS-3R rolling stock maintenance.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-2">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.15)] ring-1 ring-white/5 group">
+            <Package className="w-8 h-8 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] group-hover:bounce transition-all duration-300" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/60">
+              Inventory Master
+            </h1>
+            <p className="text-sm text-muted-foreground font-medium flex items-center gap-2 mt-0.5">
+              <span className={`inline-block w-2 h-2 rounded-full ${lowStockItems.length > 0 ? "bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"}`} />
+              Real-time stock management & spare parts tracking
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => importRef.current?.click()}>
-            <Upload className="w-4 h-4 mr-1.5" /> Import CSV
+        <div className="flex gap-2.5 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => importRef.current?.click()} className="bg-card hover:bg-muted font-semibold border-border">
+            <Upload className="w-4 h-4 mr-2 text-emerald-400" /> Import CSV
           </Button>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="w-4 h-4 mr-1.5" /> Export
+          <Button variant="outline" size="sm" onClick={exportCSV} className="bg-card hover:bg-muted font-semibold border-border">
+            <Download className="w-4 h-4 mr-2" /> Export
           </Button>
-          <Button variant="outline" size="sm" onClick={printStoreReport}>
-            <Printer className="w-4 h-4 mr-1.5" /> Print Report
+          <Button variant="outline" size="sm" onClick={printStoreReport} className="bg-card hover:bg-muted font-semibold border-border">
+            <Printer className="w-4 h-4 mr-2" /> Print
           </Button>
-          <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={openAdd}>
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20" onClick={openAdd}>
             <Plus className="w-4 h-4 mr-1.5" /> Add Item
           </Button>
         </div>

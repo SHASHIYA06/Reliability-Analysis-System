@@ -254,25 +254,30 @@ export default function DLPPage() {
     <div className="space-y-5">
       <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-primary" /> DLP Items Register
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Defect Liability Period tracking — alarm for expiring/expired items and high NCR count.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-2">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-500/20 to-orange-500/20 border border-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.15)] ring-1 ring-white/5 group">
+            <ShieldAlert className="w-8 h-8 text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.5)] group-hover:scale-110 transition-transform duration-300" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/60">
+              DLP Items Register
+            </h1>
+            <p className="text-sm text-muted-foreground font-medium flex items-center gap-2 mt-0.5">
+              <span className={`inline-block w-2 h-2 rounded-full ${alarmEnabled ? "bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]" : "bg-muted"}`} />
+              Defect Liability Period tracking & Vendor NCR monitoring
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant={alarmEnabled ? "default" : "outline"} size="sm" onClick={() => setAlarmEnabled(a => !a)}>
-            {alarmEnabled ? <Bell className="w-4 h-4 mr-1.5" /> : <BellOff className="w-4 h-4 mr-1.5" />}
+        <div className="flex gap-2.5 flex-wrap">
+          <Button variant={alarmEnabled ? "default" : "outline"} size="sm" onClick={() => setAlarmEnabled(a => !a)} className={alarmEnabled ? "bg-rose-600 hover:bg-rose-500 text-white border-none shadow-lg shadow-rose-600/20" : "bg-card border-border font-semibold text-rose-400"}>
+            {alarmEnabled ? <Bell className="w-4 h-4 mr-2 animate-ring" /> : <BellOff className="w-4 h-4 mr-2" />}
             Alarms {alarmEnabled ? "ON" : "OFF"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => importRef.current?.click()}>
-            <Upload className="w-4 h-4 mr-1.5" /> Import CSV
+          <Button variant="outline" size="sm" onClick={() => importRef.current?.click()} className="bg-card hover:bg-muted font-semibold border-border">
+            <Upload className="w-4 h-4 mr-2 text-rose-400" /> Import CSV
           </Button>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="w-4 h-4 mr-1.5" /> Export
-          </Button>
-          <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={openAdd}>
+          <Button size="sm" className="bg-primary hover:bg-primary/90 font-bold shadow-lg" onClick={openAdd}>
             <Plus className="w-4 h-4 mr-1.5" /> Add DLP Item
           </Button>
         </div>
