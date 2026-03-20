@@ -48,7 +48,7 @@ const BLANK_FORM = {
   vendor: "", unitCost: "", isCritical: "0", expiryDate: "", condition: "New"
 };
 
-function getStatus(i: InvItem): string {
+function getStatus(i: InvItem): keyof typeof STATUS_COLORS {
   if (i.qty === 0) return "Critical";
   if (i.qty < i.minQty) return "Low";
   if (i.reservedQty > 0) return "Reserved";
@@ -95,7 +95,7 @@ export default function InventoryPage() {
   const [refType, setRefType] = useState("NCR");
   const [remarks, setRemarks] = useState("");
 
-  const filtered = items.filter(i => {
+  const filtered = items.filter((i: InvItem) => {
     if (filterCat && i.category !== filterCat) return false;
     if (filterSystem && i.system !== filterSystem) return false;
     if (filterStatus && getStatus(i) !== filterStatus) return false;
@@ -106,7 +106,7 @@ export default function InventoryPage() {
     return true;
   });
 
-  const lowStockItems = items.filter(i => i.qty <= i.minQty);
+  const lowStockItems = items.filter((i: InvItem) => i.qty <= i.minQty);
   const totalValue = items.reduce((sum: number, item: InvItem) => sum + item.qty * item.unitCost, 0);
   const shortages = items.filter((i: InvItem) => i.qty < i.minQty).length;
   const criticals = items.filter((i: InvItem) => i.qty === 0 && i.isCritical === 1).length;
@@ -291,7 +291,7 @@ export default function InventoryPage() {
   };
 
   const printShortageReport = () => {
-    const shortItems = items.filter(i => i.qty < i.minQty);
+    const shortItems = items.filter((i: InvItem) => i.qty < i.minQty);
     const win = window.open("", "_blank");
     if (!win) return;
     win.document.write(`<!DOCTYPE html><html><head>
@@ -419,7 +419,7 @@ export default function InventoryPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {stats.map(s => (
+        {stats.map((s: any) => (
           <Card key={s.label} className="bg-card border-border/50">
             <CardContent className="p-3">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
@@ -508,7 +508,7 @@ export default function InventoryPage() {
                         <td className="px-4 py-2.5 text-xs font-medium text-muted-foreground">{i.location}</td>
                         <td className="px-4 py-2.5 text-xs text-muted-foreground truncate max-w-[120px]" title={i.vendor}>{i.vendor}</td>
                         <td className="px-4 py-2.5">
-                          <Badge variant="outline" className={`text-[10px] uppercase tracking-tighter px-1.5 py-0 rounded-md ring-1 ring-inset ${STATUS_COLORS[status]}`}>{status}</Badge>
+                          <Badge variant="outline" className={`text-[10px] uppercase tracking-tighter px-1.5 py-0 rounded-md ring-1 ring-inset ${STATUS_COLORS[status as keyof typeof STATUS_COLORS]}`}>{status}</Badge>
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           <DropdownMenu>

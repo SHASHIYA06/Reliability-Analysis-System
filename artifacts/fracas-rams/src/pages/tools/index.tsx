@@ -148,7 +148,7 @@ export default function ToolsPage() {
   const [showIssue, setShowIssue] = useState<Tool | null>(null);
   const [issueUser, setIssueUser] = useState("");
 
-  const filtered = tools.filter(t => {
+  const filtered = tools.filter((t: Tool) => {
     if (filterCat && t.category !== filterCat) return false;
     if (filterCond && t.condition !== filterCond) return false;
     if (filterConsumable === "Yes" && !t.consumable) return false;
@@ -374,7 +374,7 @@ export default function ToolsPage() {
           { label: "Available", value: (tools.filter(t => !t.consumable).length) - issued, color: "text-green-400" },
           { label: "Calibration Overdue", value: overdue, color: overdue > 0 ? "text-red-400" : "text-green-400" },
           { label: "Due Within 30 Days", value: dueSoon, color: dueSoon > 0 ? "text-yellow-400" : "text-green-400" },
-        ].map(s => (
+        ].map((s: any) => (
           <Card key={s.label} className="bg-card border-border/50">
             <CardContent className="p-3">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
